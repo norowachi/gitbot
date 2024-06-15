@@ -1,131 +1,80 @@
 import nacl from "tweetnacl";
 import type { Request, Response, NextFunction } from "express";
 import {
-	RESTPostAPIApplicationCommandsJSONBody,
+	APIActionRowComponent,
+	APIApplicationCommandInteraction,
 	APIApplicationCommandInteractionDataOption,
+	APIButtonComponent,
+	APIEmbed,
+	APIInteractionResponseCallbackData,
+	APIMessageComponentInteraction,
+	APIMessageComponentInteractionData,
 	ApplicationCommandOptionType,
 	ButtonStyle,
-	APIApplicationCommandInteraction,
-	APIButtonComponent,
+	ComponentType,
 	InteractionResponseType,
 	InteractionType,
 	MessageFlags,
 } from "discord-api-types/v10";
-import { EventEmitter } from "events";
 import path from "path";
 import fs from "fs";
 import { config } from "dotenv";
+import { CommandData, CustomIntEmitter } from "./interfaces.js";
+import { ConsoleColors, emojis } from "./constants.js";
+import DiscordRestClient from "./rest.js";
+import { RequestError } from "octokit";
+
+// export misc interfaces from utils cuz why not
+export * from "./interfaces.js";
 
 config();
 
-export function EnvVar() {
-	const envObj = {
-		SITE_URL: process.env.SITE_URL || "http://localhost:5000",
-		MONGO_URI: process.env.MONGO_URI,
-		PORT: process.env.PORT || 5000,
-		DISCORD_API_URL:
-			process.env.DISCORD_API_URL || "https://discord.com/api/v10",
-		DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN,
-		DISCORD_APP_ID: process.env.DISCORD_APP_ID,
-		DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY,
-		GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-		GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-	};
+export const env = {
+	SITE_URL: process.env.SITE_URL || "http://localhost:5000",
+	MONGO_URI: process.env.MONGO_URI,
+	PORT: process.env.PORT || 5000,
+	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
+	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN,
+	DISCORD_APP_ID: process.env.DISCORD_APP_ID,
+	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY,
+	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+};
 
-	const missing = Object.entries(envObj).find((key) => !key[1]);
-	if (missing) {
-		throw new Error(`Value for "${missing[0]}" is missing`);
-	}
-	return envObj;
+const missing = Object.entries(env).find((key) => !key[1]);
+
+if (missing) {
+	throw new Error(`Value for "${missing[0]}" is missing`);
 }
-
-export const ghLinks = new Map();
-
-class MyEmitter extends EventEmitter {
-	emit(event: string | any, args: any[]): boolean {
-		const response = args[0] as Response;
-
-		// remove listener after 30mins
-		setTimeout(() => {
-			if (!event) return;
-			super.removeAllListeners(event);
-			response.json({
-				type: InteractionResponseType.UpdateMessage,
-				data: {
-					components: [
-						{
-							label: "Interaction timed out!",
-							custom_id: "timedoutbtn",
-							disabled: true,
-							style: ButtonStyle.Danger,
-						} as APIButtonComponent,
-					],
-				},
-			});
-		}, 30 * 60 * 1000);
-
-		// Call the original emit method to emit the event
-		const result = super.emit(event, ...args);
-		// check if response not sent then send
-		if (!result && response.writable) {
-			response.json({
-				type: InteractionResponseType.ChannelMessageWithSource,
-				data: {
-					content: "An Unkown Error Has Occured!",
-					flags: MessageFlags.Ephemeral,
-				},
-			});
-			return false;
-		}
-		return result;
-	}
-}
-
-export const IntEmitter = new MyEmitter();
 
 /**
- * The data for a command.
- * @property name - The name of the command.
- * @property description - The description of the command.
- * @property category - The category of the command.
- * @property run - The function to run when the command is called.
+ * Interaction Commands data
  */
-export interface CommandData
-	extends Omit<
-		RESTPostAPIApplicationCommandsJSONBody,
-		"id" | "application_id"
-	> {
-	/**
-	 * | NAME | TYPE | DESCRIPTION
-	 * | --- | --- | --- |
-	 * | `GUILD` | 0 | Interaction can be used within servers
-	 * | `BOT_DM` | 1 | Interaction can be used within DMs with the app's bot user
-	 * | `PRIVATE_CHANNEL` | 2 | Interaction can be used within Group DMs and DMs other than the app's bot user
-	 */
-	contexts: number[];
-	/**
-	 *
-	 * | TYPE | ID | DESCRIPTION
-	 * | --- | --- | --- |
-	 * | `GUILD_INSTALL` | 0 |App is installable to servers
-	 * | `USER_INSTALL` | 1 | App is installable to users
-	 */
-	integration_types: number[];
-	/**
-	 *
-	 * @param res Response object
-	 * @param interaction Interaction object
-	 * @param sub subcommand group and subcommand if any in [subcommand group, subcommand] or [subcommand]
-	 * @param options options object filteredas a Record of key option name
-	 * @returns
-	 */
-	run: (
-		res: Response,
-		interaction: APIApplicationCommandInteraction,
-		sub?: string[],
-		options?: Map<string, any>
-	) => boolean | void | Promise<boolean | void>;
+export const commandsData: Map<string, CommandData> = new Map();
+
+/**
+ * Run a command
+ */
+
+export async function runCommand(name: string) {
+	const Command = commandsData.get(name);
+	if (Command) {
+		return Command.run;
+	}
+	return function () {
+		return false;
+	};
 }
+
+/**
+ * Emitter for interaction events, i.e. buttons, select menus or modals
+ */
+export const IntEmitter = new CustomIntEmitter();
+
+/**
+ * github links for verification
+ */
+export const ghLinks = new Map();
 
 /**
  * Converts data received to options map
@@ -147,6 +96,11 @@ export function getOptionsValue(
 	return options;
 }
 
+/**
+ * returns sub commands and/or sub command groups if any
+ * @param dataOptions options gotten from interaction
+ * @returns
+ */
 export function getSub(
 	dataOptions?: APIApplicationCommandInteractionDataOption
 ) {
@@ -159,6 +113,8 @@ export function getSub(
 	}
 	return;
 }
+
+//! Start; Djs interaction stuff stolen code :)
 
 /**
  * Converts different types to Uint8Array.
@@ -312,12 +268,19 @@ export function verifyKeyMiddleware(
 	};
 }
 
+//! End; Djs interaction stuff stolen code :(
+
+/**
+ * returns all the commands in the commands folder
+ * @param commands array to output commands into
+ * @param dir where the commands at
+ */
 export async function getInteractionCommands(
 	commands: any[],
 	dir = "./commands"
 ) {
 	try {
-		const filePath = path.join(__dirname, dir);
+		const filePath = path.join(import.meta.dirname, dir);
 		const files = fs.readdirSync(filePath);
 		for (const file of files) {
 			const stat = fs.lstatSync(path.join(filePath, file));
@@ -326,7 +289,7 @@ export async function getInteractionCommands(
 			}
 			if (file.startsWith("mod")) {
 				let { default: Command } = await import(
-					path.join(__dirname, dir, file)
+					path.join(import.meta.url, "..", dir, file)
 				);
 				commands.push({
 					default_member_permission: Command.default_member_permission,
@@ -348,10 +311,18 @@ export async function getInteractionCommands(
 	}
 }
 
+/**
+ * nap time!
+ */
 export function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * returns current time in ISO format
+ * @param shard_id bot shard if any
+ * @returns
+ */
 export function DateInISO(shard_id: number | null = null) {
 	return (
 		ChangeConsoleColor("FgCyan", "[" + new Date().toISOString() + "] ") +
@@ -359,37 +330,195 @@ export function DateInISO(shard_id: number | null = null) {
 	);
 }
 
-export const ConsoleColors = {
-	Reset: "\x1b[0m",
-	Bright: "\x1b[1m",
-	Dim: "\x1b[2m",
-	Underscore: "\x1b[4m",
-	Blink: "\x1b[5m",
-	Reverse: "\x1b[7m",
-	Hidden: "\x1b[8m",
-
-	FgBlack: "\x1b[30m",
-	FgRed: "\x1b[31m",
-	FgGreen: "\x1b[32m",
-	FgYellow: "\x1b[33m",
-	FgBlue: "\x1b[34m",
-	FgMagenta: "\x1b[35m",
-	FgCyan: "\x1b[36m",
-	FgWhite: "\x1b[37m",
-
-	BgBlack: "\x1b[40m",
-	BgRed: "\x1b[41m",
-	BgGreen: "\x1b[42m",
-	BgYellow: "\x1b[43m",
-	BgBlue: "\x1b[44m",
-	BgMagenta: "\x1b[45m",
-	BgCyan: "\x1b[46m",
-	BgWhite: "\x1b[47m",
-};
-
+/* change color of text in console */
 export function ChangeConsoleColor(
 	color: keyof typeof ConsoleColors,
 	value: string
 ) {
 	return `${ConsoleColors[color]}${value}${ConsoleColors.Reset}`;
+}
+
+/**
+ * Create an embed pagination
+ * @param interaction the interaction object
+ * @param embeds embeds to paginate
+ *
+ */
+export async function embedMaker(res: Response, embeds: APIEmbed[]) {
+	// defining interaction
+	const interaction = res.req.body as APIApplicationCommandInteraction;
+	// constants, custom ids and first page
+	let page = 0;
+	const date = Date.now();
+	const prev = `previous-${date}`;
+	const next = `next-${date}`;
+
+	// nav buttons
+	const navbtns: APIActionRowComponent<APIButtonComponent> = {
+		type: ComponentType.ActionRow,
+		components: [
+			{
+				type: ComponentType.Button,
+				style: ButtonStyle.Primary,
+				emoji: { name: emojis.arrowLeft },
+				custom_id: prev,
+				disabled: true,
+			},
+			{
+				type: ComponentType.Button,
+				style: ButtonStyle.Primary,
+				emoji: { name: emojis.arrowRight },
+				custom_id: next,
+				// if only one embed, disable next button
+				disabled: embeds.length == 1 ? true : false,
+			},
+		],
+	};
+
+	// setting first footer
+	embeds[page].footer = {
+		text: `page ${page + 1} of ${embeds.length}`,
+	};
+
+	// defining first message
+	const message: APIInteractionResponseCallbackData = {
+		embeds: [embeds[page]],
+		components: [navbtns],
+	};
+
+	// sending first message
+	res.json({
+		type: InteractionResponseType.ChannelMessageWithSource,
+		data: message,
+	});
+
+	// add listeners for the nav buttons
+	IntEmitter.on(prev, InteractionCreateEventListener);
+	IntEmitter.on(next, InteractionCreateEventListener);
+
+	// remove listeners & disable component after 15 minutes
+	setTimeout(() => {
+		IntEmitter.off(prev, InteractionCreateEventListener);
+		IntEmitter.off(next, InteractionCreateEventListener);
+		navbtns.components![0].disabled = true;
+		navbtns.components![1].disabled = true;
+		new DiscordRestClient(env.DISCORD_APP_TOKEN!, IntEmitter).req(
+			"PATCH",
+			`/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+			JSON.stringify({
+				components: [navbtns],
+			})
+		);
+	}, 15 * 60 * 1000);
+
+	// interaction create event listener
+	async function InteractionCreateEventListener(
+		...args: [Response, APIApplicationCommandInteraction]
+	) {
+		interaction.user = interaction.member?.user || interaction.user;
+		// if not author of the interaction, nuh uh
+		if ((args[1].user || args[1].member?.user)?.id !== interaction.user?.id) {
+			args[0].json({
+				type: InteractionResponseType.ChannelMessageWithSource,
+				data: {
+					content: "This interaction is not for you!",
+					flags: MessageFlags.Ephemeral,
+				},
+			});
+			return;
+		}
+		// defining response, interaction and interaction data
+		const res = args[0];
+		const int = args[1] as unknown as APIMessageComponentInteraction;
+		const intData = int.data as unknown as APIMessageComponentInteractionData;
+
+		// if previous button clicked
+		if (intData.custom_id == prev) {
+			// if not first page
+			if (page != 0) {
+				// go to previous page
+				page--;
+				// edit footer
+				embeds[page].footer = {
+					text: `page ${page + 1} of ${embeds.length}`,
+				};
+				// if new page is first page, disable prev button
+				if (page == 0) {
+					navbtns.components![0].disabled = true;
+					// else enable both buttons
+				} else {
+					navbtns.components![0].disabled = false;
+					navbtns.components![1].disabled = false;
+				}
+
+				// finally update the embed
+				res.json({
+					type: InteractionResponseType.UpdateMessage,
+					data: {
+						embeds: [embeds[page]],
+						components: [navbtns],
+					},
+				});
+				return;
+			}
+		}
+
+		// if next button clicked
+		if (intData.custom_id == next) {
+			// if not last page
+			if (page < embeds.length - 1) {
+				// go to next page
+				page++;
+				// edit footer
+				embeds[page].footer = {
+					text: `page ${page + 1} of ${embeds.length}`,
+				};
+				// if new page is last page, disable next button
+				if (page === embeds.length - 1) {
+					navbtns.components![1].disabled = true;
+					// else enable both buttons
+				} else {
+					navbtns.components![0].disabled = false;
+					navbtns.components![1].disabled = false;
+				}
+
+				// and again, finally update the embed
+				res.json({
+					type: InteractionResponseType.UpdateMessage,
+					data: {
+						embeds: [embeds[page]],
+						components: [navbtns],
+					},
+				});
+				return;
+			}
+		}
+		return;
+	}
+}
+
+export function Capitalize(str: string) {
+	return str[0].toUpperCase() + str.slice(1).toLowerCase();
+}
+
+export function OctoErrMsg(req: RequestError) {
+	// get all errors and map them to show *pretty* info
+	const errors = (req.response?.data as any).errors
+		// map thru all errors
+		?.map((c: { [K: string]: string }) =>
+			// map thru the entries of the error and format it to a pretty readable way :v
+			Object.entries(c)
+				.map((c) => `> ${Capitalize(c[0])}: \`${c[1]}\``)
+				.join("\n")
+		)
+		.join("\n\n");
+	// message, status code & the mapped errors, if response exists
+	return (
+		(req.response
+			? `${(req.response.data as any).message}`
+			: "Operation was not successful") +
+		((req.response?.data as any).errors
+			? `\nStatus: ${(req.response?.data as any).status}, Error(s):\n${errors}`
+			: "")
+	);
 }

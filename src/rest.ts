@@ -1,4 +1,4 @@
-import { ChangeConsoleColor, DateInISO, EnvVar, sleep } from "./utils";
+import { ChangeConsoleColor, DateInISO, env, sleep } from "./utils.js";
 import { EventEmitter } from "events";
 
 type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -7,7 +7,7 @@ export default class DiscordRestClient {
 	private readonly token: string;
 	private readonly emitter?: EventEmitter;
 	// using nirn-proxy as the api endpoint
-	private readonly baseUrl: string = EnvVar().DISCORD_API_URL;
+	private readonly baseUrl: string = env.DISCORD_API_URL;
 
 	constructor(token: string, emitter?: EventEmitter) {
 		this.token = token;

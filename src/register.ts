@@ -1,9 +1,7 @@
-import RestClient from "./rest";
-import { EnvVar, getInteractionCommands } from "./utils";
+import RestClient from "./rest.js";
+import { env, getInteractionCommands } from "./utils.js";
 import { APIApplicationCommand, Routes } from "discord-api-types/v10";
-import { inspect } from "util";
-
-const env = EnvVar();
+import { inspect } from "node:util";
 
 const rest = new RestClient(env.DISCORD_APP_TOKEN!);
 const application_id = env.DISCORD_APP_ID!;

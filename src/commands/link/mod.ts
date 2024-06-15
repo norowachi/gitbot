@@ -6,10 +6,9 @@ import {
 	InteractionResponseType,
 	MessageFlags,
 } from "discord-api-types/v10";
-import { CommandData, EnvVar } from "../../utils";
-import { ghLinks } from "../../utils";
-import { FindUser } from "../../database/functions/user";
-import { UserEnums } from "../../interfaces/database/user";
+import { CommandData, env, ghLinks } from "../../utils.js";
+import { FindUser } from "../../database/functions/user.js";
+import { UserEnums } from "../../database/interfaces/user.js";
 import { randomBytes, hash } from "crypto";
 
 export default {
@@ -20,6 +19,8 @@ export default {
 	integration_types: [0, 1],
 	run: async (res, interaction) => {
 		const userId = interaction.member?.user.id || interaction.user?.id;
+
+		// check if user is already linked
 		if (await FindUser({ discordId: userId }))
 			return res.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
@@ -39,7 +40,6 @@ export default {
 			ghLinks.has(random) ? ghLinks.delete(random) : null;
 		}, 10 * 60 * 1000);
 
-		const env = EnvVar();
 		// send sign up link
 		res.json({
 			type: InteractionResponseType.ChannelMessageWithSource,

@@ -5,8 +5,10 @@ import {
 	getOptionsValue,
 	getSub,
 	IntEmitter,
-	EnvVar,
-} from "./utils";
+	env,
+	commandsData,
+	runCommand,
+} from "./utils.js";
 import {
 	InteractionResponseType,
 	InteractionType,
@@ -16,19 +18,21 @@ import {
 	APIInteraction,
 	APIChatInputApplicationCommandInteraction,
 } from "discord-api-types/v10";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { connect } from "mongoose";
+import { FindUser } from "./database/functions/user.js";
+import { Octokit } from "octokit";
+import StatusMonitor from "express-status-monitor";
 
 // routers
-import github from "./routers/github";
-
-const env = EnvVar();
+import github from "./routers/github.js";
 
 const app: Application = express();
 
-const commands: Map<string, CommandData> = new Map();
-cacheCommands();
+app.use(StatusMonitor());
+
+cacheCommands(commandsData);
 
 app.use("/github", github);
 
@@ -62,63 +66,74 @@ app.post(
 		if (interaction.type === InteractionType.ApplicationCommand) {
 			interaction = interaction as APIChatInputApplicationCommandInteraction;
 
+			// get DBUser
+			const DBUser = await FindUser({
+				discordId: interaction.user?.id || interaction.member?.user.id,
+			});
+			// if command is not `link` and user is not in db, say nuh uh
+			if (interaction.data.name !== "link" && !DBUser) {
+				return res.json({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content:
+							"You have to link your github account first, please use the `/link` command.",
+						flags: MessageFlags.Ephemeral,
+					},
+				});
+			}
+
+			// initialize octokit
+			const octokit = new Octokit({
+				auth: DBUser?.github.access_token,
+				userAgent: "GitBot@norowa.dev",
+			});
+
 			// run command
-			const result = await (
-				await runCommand(interaction.data?.name!)
+			await (
+				await runCommand(interaction.data.name!)
 			)(
 				res,
 				interaction,
+				interaction.data.name !== "link" ? [DBUser!, octokit] : [],
 				getSub(interaction.data?.options?.at(0)),
 				interaction.data?.options
 					? getOptionsValue(interaction.data?.options)
 					: undefined
 			);
-			// if command not found or an error happened
-			if (result) {
-				res.json({
-					type: InteractionResponseType.ChannelMessageWithSource,
-					data: {
-						content: "An error has occurred while executing the command.",
-						flags: MessageFlags.Ephemeral,
-					},
-				});
-			}
 			return;
 		} else return;
 	}
 );
 
 app.listen(env.PORT, async () => {
-	if (!env.MONGO_URI) throw Error("Mongo URI is not specified.");
-	connect(env.MONGO_URI!).then((c) =>
-		console.log(`Connected to "${c.connection.name}" on "${c.connection.host}"`)
-	);
+	connect(env.MONGO_URI!)
+		.then((c) =>
+			console.log(
+				`Connected to "${c.connection.name}" on "${c.connection.host}"`
+			)
+		)
+		.catch((e) =>
+			console.log(`Couldn't connect to the database, Error:\n${e}`)
+		);
 	console.log(`Started and running on port ${env.PORT}`);
 });
 
-async function cacheCommands(dir: string = "./commands") {
-	const filePath = path.join(__dirname, dir);
+async function cacheCommands(
+	commands: Map<string, CommandData>,
+	dir: string = "./commands"
+) {
+	const filePath = path.join(import.meta.dirname, dir);
 	const files = fs.readdirSync(filePath);
 	for (const file of files) {
 		const stat = fs.lstatSync(path.join(filePath, file));
 		if (stat.isDirectory()) {
-			await cacheCommands(path.join(dir, file));
+			await cacheCommands(commands, path.join(dir, file));
 		}
 		if (file.startsWith("mod.")) {
 			const { default: Command } = await import(
-				path.join(__dirname, dir, file)
+				path.join(import.meta.url, "..", dir, file)
 			);
 			commands.set(Command.name, Command);
 		}
 	}
-}
-
-async function runCommand(name: string) {
-	const Command = commands.get(name);
-	if (Command) {
-		return Command.run;
-	}
-	return function () {
-		return false;
-	};
 }

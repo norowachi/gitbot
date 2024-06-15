@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, model } from "mongoose";
 
 const UserData = new Schema({
 	discord: {
@@ -7,7 +7,7 @@ const UserData = new Schema({
 	},
 	github: {
 		id: { type: String, unique: true },
-		username: String,
+		login: String,
 		name: String,
 		location: String,
 		bio: String,
@@ -19,5 +19,5 @@ const UserData = new Schema({
 	},
 });
 
-const user = models.user || model("User", UserData);
+const user = model("User", UserData);
 export default user;

@@ -3,8 +3,9 @@ import {
 	UserEnums,
 	DBUserOptions,
 	DBUser,
-} from "../../interfaces/database/user";
-import user from "../schemas/user";
+} from "../../database/interfaces/user.js";
+import { Errors } from "../../utils.js";
+import user from "../schemas/user.js";
 
 // initialize a user document
 export async function InitUser(
@@ -28,7 +29,7 @@ export async function InitUser(
 			},
 			github: {
 				id: options.github.id,
-				username: options.github.username,
+				login: options.github.login,
 				name: options.github.name,
 				location: options.github.location,
 				bio: options.github.bio,
@@ -40,7 +41,7 @@ export async function InitUser(
 			},
 		} as DBUser)
 		.catch(() => {
-			return UserEnums.Error;
+			return Errors.Unexpected;
 		}); // catch any errors
 	return UserEnums.Success;
 }

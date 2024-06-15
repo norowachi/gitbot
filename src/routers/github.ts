@@ -1,13 +1,9 @@
 import { Router } from "express";
-import { EnvVar, ghLinks } from "../utils";
-import { InitUser } from "../database/functions/user";
-import DiscordRestClient from "../rest";
+import { env, Errors, ghLinks } from "../utils.js";
+import { InitUser } from "../database/functions/user.js";
+import DiscordRestClient from "../rest.js";
 import { APIUser, Routes } from "discord-api-types/v10";
-import { GithubUser } from "../interfaces/github/user";
-import { UserEnums } from "../interfaces/database/user";
-
-// getting env vars
-const env = EnvVar();
+import { Octokit } from "octokit";
 
 // setting up a router
 const github = Router();
@@ -51,8 +47,16 @@ github.get("/callback", async (req, res) => {
 	)
 		.json()
 		.catch(() => {
-			res.send(UserEnums.Error);
+			res.send(Errors.Unexpected);
 		});
+
+	// check if the access token is valid
+	if (!result.access_token) return res.sendStatus(400);
+
+	// initialize octokit
+	const octokit = new Octokit({
+		auth: result.access_token,
+	});
 
 	// get the discord user data
 	const discord_user = (await rest.req(
@@ -60,22 +64,11 @@ github.get("/callback", async (req, res) => {
 		Routes.user(discordID)
 	)) as APIUser;
 	// get the github user data
-	const github_user: GithubUser = await (
-		await fetch("https://api.github.com/user", {
-			headers: {
-				Accept: "application/vnd.github+json",
-				Authorization: `Bearer ${result.access_token}`,
-			},
-		})
-	)
-		.json()
-		.catch(() => {
-			res.send(UserEnums.Error);
-		});
-	// check if the user data is valid
-	if (!discord_user || !github_user) return res.sendStatus(400);
-	// check if the access token is valid
-	if (!result.access_token) return res.sendStatus(400);
+	const github_user = (await octokit.rest.users.getAuthenticated()).data;
+
+	// check if the returned user data is valid & if the access token is valid
+	if (!discord_user || !github_user || !discord_user.id || !github_user.id)
+		return res.sendStatus(400);
 
 	// initialize the user
 	const InitUserResult = await InitUser({
@@ -85,7 +78,7 @@ github.get("/callback", async (req, res) => {
 		},
 		github: {
 			id: github_user.id.toString(),
-			username: github_user.login,
+			login: github_user.login,
 			name: github_user.name,
 			location: github_user.location,
 			bio: github_user.bio,
@@ -96,21 +89,8 @@ github.get("/callback", async (req, res) => {
 			access_token: result.access_token,
 		},
 	});
-	// check if the user is initialized successfully
-	switch (InitUserResult) {
-		case UserEnums.Success:
-			res.send(UserEnums.Success);
-			return;
-		case UserEnums.GithubLinked:
-			res.send(UserEnums.GithubLinked);
-			return;
-		case UserEnums.DiscordLinked:
-			res.send(UserEnums.DiscordLinked);
-			return;
-		default:
-			res.send(UserEnums.Error);
-			return;
-	}
+	// return initializing result
+	return res.send(InitUserResult);
 });
 
 // the webhooks route
