@@ -13,11 +13,12 @@ now onto the real talk
 
 # Requirements
 
-1. [NodeJS](https://nodejs.org)
-2. A [MongoDB](https://mongodb.com) DataBase
+1. A domain, even a [nginx](https://nginx.org) or [cloudflared tunnel](https://www.cloudflare.com/products/tunnel/) one would work, then add it to your `.env` file & your bot's "Interactions Endpoint URL"
+2. [NodeJS](https://nodejs.org)
+3. A [MongoDB](https://mongodb.com) DataBase
    > learn how to create one [here](https://www.mongodb.com/resources/products/fundamentals/create-database)
-3. [Docker](https://docker.com) (Optional)
-
+4. [Docker](https://docker.com) (Optional)
+   
 ## SelfHosting with Docker
 
 1. Clone the repo
@@ -65,9 +66,5 @@ Without docker adds some other extra steps, instead of `"3. The Docker Commands"
    > ```
 
 And now you also have your own local gitbot! (_yippe_)
-
-### For Public Hosting
-
-To host your own GitBot publicly you'll have to get a domain, even a [nginx](https://nginx.org) or [cloudflared tunnel](https://www.cloudflare.com/products/tunnel/) one would work, then add it to your bot's "Interactions Endpoint URL" instead of `http://localhost:{PORT}`
 
 # DO NOT FORGET TO PUT YOUR {SITE_URL} IN THE "INTERACTION ENDPOINT URL" FIELD IN DEV PORTAL
