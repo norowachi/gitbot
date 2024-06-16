@@ -114,7 +114,8 @@ export function getSub(
 	return;
 }
 
-//! Start; Djs interaction stuff stolen code :)
+//! Start :)
+//? Source https://github.com/discord/discord-interactions-js/blob/081656ec412ffc3e4ce7ac8c9ab48c67d9996bf5/src/index.ts#L88
 
 /**
  * Converts different types to Uint8Array.
@@ -268,7 +269,7 @@ export function verifyKeyMiddleware(
 	};
 }
 
-//! End; Djs interaction stuff stolen code :(
+//! End :(
 
 /**
  * returns all the commands in the commands folder
