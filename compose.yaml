@@ -1,5 +1,5 @@
 services:
-  gitbot:
+  app:
     build:
       context: .
     environment:

@@ -30,15 +30,15 @@ now onto the real talk
 
 - 1. Build the image
      > ```sh
-     > docker build -t gitbot .
+     > docker compose build
      > ```
 - 2. Register the commands
      > ```sh
-     > docker run gitbot pnpm register
+     > docker run --rm gitbot-app pnpm register
      > ```
 - 3. Run the GitBot
      > ```sh
-     > pnpm start
+     > docker compose up
      > ```
 
 and voila! you now have your own friendly local gitbot.
