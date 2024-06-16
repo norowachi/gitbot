@@ -9,17 +9,13 @@ import {
 } from "discord-api-types/v10";
 import type { Response } from "express";
 import { EventEmitter } from "events";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 import { DBUser } from "./database/interfaces/user.js";
 
 /**
  * General Repeatitive Errors
  */
 export enum Errors {
-	NotGuild = "This command can only be used in a server",
-	NotDM = "This command can only be used in a DM",
-	NotDev = "You must be a developer to use this command",
-	NotLinked = "You must link your account to use this command",
 	Unexpected = "An unexpected error has occurred",
 }
 

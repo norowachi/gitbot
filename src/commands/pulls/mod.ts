@@ -10,7 +10,7 @@ import {
 } from "discord-api-types/v10";
 import { CommandData, IntEmitter, OctoErrMsg } from "../../utils.js";
 import { CommandConsts } from "../../constants.js";
-import { Octokit, RequestError } from "octokit";
+import { Octokit } from "@octokit/rest";
 import { Response } from "express";
 import { updateModal } from "./components/updateModal.js";
 
@@ -144,7 +144,7 @@ async function Create(
 			issue,
 		})
 		// catch error
-		.catch((e: RequestError) => {
+		.catch((e) => {
 			res.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {

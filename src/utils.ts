@@ -15,13 +15,12 @@ import {
 	InteractionType,
 	MessageFlags,
 } from "discord-api-types/v10";
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 import { config } from "dotenv";
 import { CommandData, CustomIntEmitter } from "./interfaces.js";
 import { ConsoleColors, emojis } from "./constants.js";
 import DiscordRestClient from "./rest.js";
-import { RequestError } from "octokit";
 
 // export misc interfaces from utils cuz why not
 export * from "./interfaces.js";
@@ -29,9 +28,11 @@ export * from "./interfaces.js";
 config();
 
 export const env = {
-	SITE_URL: process.env.SITE_URL || "http://localhost:5000",
-	MONGO_URI: process.env.MONGO_URI,
 	PORT: process.env.PORT || 5000,
+	get SITE_URL() {
+		return process.env.SITE_URL || `http://localhost:${this.PORT}`;
+	},
+	MONGO_URI: process.env.MONGO_URI,
 	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
 	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN,
 	DISCORD_APP_ID: process.env.DISCORD_APP_ID,
@@ -561,7 +562,7 @@ export function Capitalize(str: string) {
 	return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 
-export function OctoErrMsg(req: RequestError) {
+export function OctoErrMsg(req: any) {
 	// get all errors and map them to show *pretty* info
 	const errors = (req.response?.data as any).errors
 		// map thru all errors

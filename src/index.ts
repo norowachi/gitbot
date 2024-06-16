@@ -22,7 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { connect } from "mongoose";
 import { FindUser } from "./database/functions/user.js";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 import StatusMonitor from "express-status-monitor";
 
 // routers

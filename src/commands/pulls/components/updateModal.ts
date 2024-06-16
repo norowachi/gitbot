@@ -1,20 +1,14 @@
 import {
-	APIActionRowComponent,
-	APIApplicationCommandInteraction,
 	APIEmbed,
-	APIInteractionResponseCallbackData,
-	APIModalActionRowComponent,
 	APIModalInteractionResponseCallbackData,
 	APIModalSubmitInteraction,
 	ComponentType,
 	InteractionResponseType,
 	MessageFlags,
-	ModalSubmitActionRowComponent,
-	ModalSubmitComponent,
 	TextInputStyle,
 } from "discord-api-types/v10";
 import { Response } from "express";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 import { Capitalize, IntEmitter, OctoErrMsg } from "../../../utils.js";
 
 export async function updateModal(

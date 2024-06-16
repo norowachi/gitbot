@@ -3,7 +3,7 @@ import { env, Errors, ghLinks } from "../utils.js";
 import { InitUser } from "../database/functions/user.js";
 import DiscordRestClient from "../rest.js";
 import { APIUser, Routes } from "discord-api-types/v10";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 
 // setting up a router
 const github = Router();
