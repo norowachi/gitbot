@@ -1,4 +1,3 @@
-import nacl from "tweetnacl";
 import type { Request, Response, NextFunction } from "express";
 import {
 	APIActionRowComponent,
@@ -118,13 +117,40 @@ export function getSub(
 //? Source https://github.com/discord/discord-interactions-js/blob/081656ec412ffc3e4ce7ac8c9ab48c67d9996bf5/src/index.ts#L88
 
 /**
+ * Based on environment, get a reference to the Web Crypto API's SubtleCrypto interface.
+ * @returns An implementation of the Web Crypto API's SubtleCrypto interface.
+ */
+function getSubtleCrypto(): SubtleCrypto {
+	if (typeof window !== "undefined" && window.crypto) {
+		return window.crypto.subtle;
+	}
+	if (typeof globalThis !== "undefined" && globalThis.crypto) {
+		return globalThis.crypto.subtle;
+	}
+	if (typeof crypto !== "undefined") {
+		return crypto.subtle;
+	}
+	if (typeof require === "function") {
+		// Cloudflare Workers are doing what appears to be a regex check to look and
+		// warn for this pattern. We should never get here in a Cloudflare Worker, so
+		// I am being coy to avoid detection and a warning.
+		const cryptoPackage = "node:crypto";
+		const crypto = require(cryptoPackage);
+		return crypto.webcrypto.subtle;
+	}
+	throw new Error("No Web Crypto API implementation found");
+}
+
+export const subtleCrypto = getSubtleCrypto();
+
+/**
  * Converts different types to Uint8Array.
  *
  * @param value - Value to convert. Strings are parsed as hex.
  * @param format - Format of value. Valid options: 'hex'. Defaults to utf-8.
  * @returns Value in Uint8Array form.
  */
-function valueToUint8Array(
+export function valueToUint8Array(
 	value: Uint8Array | ArrayBuffer | Buffer | string,
 	format?: string
 ): Uint8Array {
@@ -137,11 +163,11 @@ function valueToUint8Array(
 			if (matches == null) {
 				throw new Error("Value is not a valid hex string");
 			}
-			const hexVal = matches.map((byte: string) => parseInt(byte, 16));
+			const hexVal = matches.map((byte: string) => Number.parseInt(byte, 16));
 			return new Uint8Array(hexVal);
-		} else {
-			return new TextEncoder().encode(value);
 		}
+
+		return new TextEncoder().encode(value);
 	}
 	try {
 		if (Buffer.isBuffer(value)) {
@@ -168,7 +194,10 @@ function valueToUint8Array(
  * @param arr2 - Second array
  * @returns Concatenated arrays
  */
-function concatUint8Arrays(arr1: Uint8Array, arr2: Uint8Array): Uint8Array {
+export function concatUint8Arrays(
+	arr1: Uint8Array,
+	arr2: Uint8Array
+): Uint8Array {
 	const merged = new Uint8Array(arr1.length + arr2.length);
 	merged.set(arr1);
 	merged.set(arr2, arr1.length);
@@ -184,20 +213,38 @@ function concatUint8Arrays(arr1: Uint8Array, arr2: Uint8Array): Uint8Array {
  * @param clientPublicKey - The public key from the Discord developer dashboard
  * @returns Whether or not validation was successful
  */
-export function verifyKey(
+export async function verifyKey(
 	rawBody: Uint8Array | ArrayBuffer | Buffer | string,
-	signature: Uint8Array | ArrayBuffer | Buffer | string,
-	timestamp: Uint8Array | ArrayBuffer | Buffer | string,
-	clientPublicKey: Uint8Array | ArrayBuffer | Buffer | string
-): boolean {
+	signature: string,
+	timestamp: string,
+	clientPublicKey: string | CryptoKey
+): Promise<boolean> {
 	try {
 		const timestampData = valueToUint8Array(timestamp);
 		const bodyData = valueToUint8Array(rawBody);
 		const message = concatUint8Arrays(timestampData, bodyData);
-
-		const signatureData = valueToUint8Array(signature, "hex");
-		const publicKeyData = valueToUint8Array(clientPublicKey, "hex");
-		return nacl.sign.detached.verify(message, signatureData, publicKeyData);
+		const publicKey =
+			typeof clientPublicKey === "string"
+				? await subtleCrypto.importKey(
+						"raw",
+						valueToUint8Array(clientPublicKey, "hex"),
+						{
+							name: "ed25519",
+							namedCurve: "ed25519",
+						},
+						false,
+						["verify"]
+				  )
+				: clientPublicKey;
+		const isValid = await subtleCrypto.verify(
+			{
+				name: "ed25519",
+			},
+			publicKey,
+			valueToUint8Array(signature, "hex"),
+			message
+		);
+		return isValid;
 	} catch (ex) {
 		return false;
 	}
@@ -216,12 +263,24 @@ export function verifyKeyMiddleware(
 		throw new Error("You must specify a Discord client public key");
 	}
 
-	return function (req: Request, res: Response, next: NextFunction) {
-		const timestamp = (req.header("X-Signature-Timestamp") || "") as string;
-		const signature = (req.header("X-Signature-Ed25519") || "") as string;
+	return async (req: Request, res: Response, next: NextFunction) => {
+		const timestamp = req.header("X-Signature-Timestamp") || "";
+		const signature = req.header("X-Signature-Ed25519") || "";
 
-		function onBodyComplete(rawBody: Buffer) {
-			if (!verifyKey(rawBody, signature, timestamp, clientPublicKey)) {
+		if (!timestamp || !signature) {
+			res.statusCode = 401;
+			res.end("[discord-interactions] Invalid signature");
+			return;
+		}
+
+		async function onBodyComplete(rawBody: Buffer) {
+			const isValid = await verifyKey(
+				rawBody,
+				signature,
+				timestamp,
+				clientPublicKey
+			);
+			if (!isValid) {
 				res.statusCode = 401;
 				res.end("[discord-interactions] Invalid signature");
 				return;
@@ -244,9 +303,9 @@ export function verifyKeyMiddleware(
 
 		if (req.body) {
 			if (Buffer.isBuffer(req.body)) {
-				onBodyComplete(req.body);
+				await onBodyComplete(req.body);
 			} else if (typeof req.body === "string") {
-				onBodyComplete(Buffer.from(req.body, "utf-8"));
+				await onBodyComplete(Buffer.from(req.body, "utf-8"));
 			} else {
 				console.warn(
 					"[discord-interactions]: req.body was tampered with, probably by some other middleware. We recommend disabling middleware for interaction routes so that req.body is a raw buffer."
@@ -254,16 +313,16 @@ export function verifyKeyMiddleware(
 				// Attempt to reconstruct the raw buffer. This works but is risky
 				// because it depends on JSON.stringify matching the Discord backend's
 				// JSON serialization.
-				onBodyComplete(Buffer.from(JSON.stringify(req.body), "utf-8"));
+				await onBodyComplete(Buffer.from(JSON.stringify(req.body), "utf-8"));
 			}
 		} else {
 			const chunks: Array<Buffer> = [];
 			req.on("data", (chunk) => {
 				chunks.push(chunk);
 			});
-			req.on("end", () => {
+			req.on("end", async () => {
 				const rawBody = Buffer.concat(chunks);
-				onBodyComplete(rawBody);
+				await onBodyComplete(rawBody);
 			});
 		}
 	};
