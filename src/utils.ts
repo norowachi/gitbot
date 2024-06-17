@@ -17,6 +17,7 @@ import {
 } from "discord-api-types/v10";
 import path from "node:path";
 import fs from "node:fs";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { config } from "dotenv";
 import { CommandData, CustomIntEmitter } from "./interfaces.js";
 import { ConsoleColors, emojis } from "./constants.js";
@@ -30,15 +31,19 @@ config();
 export const env = {
 	PORT: process.env.PORT || 5000,
 	get SITE_URL() {
-		return process.env.SITE_URL || `http://localhost:${this.PORT}`;
+		return (
+			process.env.SITE_URL?.replace(/\/$/, "") ||
+			`http://localhost:${this.PORT}`
+		);
 	},
-	MONGO_URI: process.env.MONGO_URI,
+	MONGO_URI: process.env.MONGO_URI!,
 	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
-	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN,
-	DISCORD_APP_ID: process.env.DISCORD_APP_ID,
-	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY,
-	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN!,
+	DISCORD_APP_ID: process.env.DISCORD_APP_ID!,
+	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY!,
+	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID!,
+	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET!,
+	ENCRYPTION_KEY: process.env.ENCRYPTION_KEY!,
 };
 
 const missing = Object.entries(env).find((key) => !key[1]);
@@ -582,4 +587,33 @@ export function OctoErrMsg(req: any) {
 			? `\nStatus: ${(req.response?.data as any).status}, Error(s):\n${errors}`
 			: "")
 	);
+}
+
+// encrypt a token
+export function encryptToken(token: string): string {
+	// For AES, this is always 16
+	const iv = randomBytes(16);
+	const cipher = createCipheriv(
+		"aes-256-cbc",
+		Buffer.from(env.ENCRYPTION_KEY),
+		iv
+	);
+	let encrypted = cipher.update(token);
+	encrypted = Buffer.concat([encrypted, cipher.final()]);
+	return iv.toString("hex") + ":" + encrypted.toString("hex");
+}
+
+// Function to decrypt a token
+export function decryptToken(encryptedToken: string): string {
+	const textParts = encryptedToken.split(":");
+	const iv = Buffer.from(textParts.shift()!, "hex");
+	const encryptedText = Buffer.from(textParts.join(":"), "hex");
+	const decipher = createDecipheriv(
+		"aes-256-cbc",
+		Buffer.from(env.ENCRYPTION_KEY),
+		iv
+	);
+	let decrypted = decipher.update(encryptedText);
+	decrypted = Buffer.concat([decrypted, decipher.final()]);
+	return decrypted.toString();
 }

@@ -8,6 +8,7 @@ import {
 	env,
 	commandsData,
 	runCommand,
+	decryptToken,
 } from "./utils.js";
 import {
 	InteractionResponseType,
@@ -67,6 +68,7 @@ app.post(
 			const DBUser = await FindUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
 			});
+
 			// if command is not `link` and user is not in db, say nuh uh
 			if (interaction.data.name !== "link" && !DBUser) {
 				return res.json({
@@ -80,10 +82,15 @@ app.post(
 			}
 
 			// initialize octokit
-			const octokit = new Octokit({
-				auth: DBUser?.github.access_token,
-				userAgent: "GitBot@norowa.dev",
-			});
+			let octokit: null | Octokit = null;
+
+			// if db user and access token exists set octokit
+			if (DBUser && DBUser.github.access_token) {
+				octokit = new Octokit({
+					auth: decryptToken(DBUser!.github.access_token),
+					userAgent: "gitbot.norowa.dev",
+				});
+			}
 
 			// run command
 			await (
@@ -91,7 +98,7 @@ app.post(
 			)(
 				res,
 				interaction,
-				interaction.data.name !== "link" ? [DBUser!, octokit] : [],
+				octokit ? [DBUser!, octokit] : [],
 				getSub(interaction.data?.options?.at(0)),
 				interaction.data?.options
 					? getOptionsValue(interaction.data?.options)

@@ -11,7 +11,7 @@
 		"rebuild": "rm -rf dist && pnpm build",
 		"build": "tsc",
 		"register": "node dist/register.js",
-		"start": "node dist/index.js --disable-warning=ExperimentalWarning",
+		"start": "node --disable-warning=ExperimentalWarning dist/index.js",
 		"dev": "pnpm build && pnpm run start",
 		"docker:build": "docker compose build",
 		"docker:register": "docker run --rm gitbot-app pnpm register",

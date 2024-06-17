@@ -9,7 +9,7 @@ import {
 import { CommandData, env, ghLinks } from "../../utils.js";
 import { FindUser } from "../../database/functions/user.js";
 import { UserEnums } from "../../database/interfaces/user.js";
-import { randomBytes, hash } from "crypto";
+import { randomBytes, hash } from "node:crypto";
 
 export default {
 	name: "link",
@@ -31,7 +31,7 @@ export default {
 			});
 
 		// generate a random hash
-		const random = hash("sha256", randomBytes(18).toString());
+		const random = hash("sha256", randomBytes(16));
 		// add user id to the ghlinks list with the random string
 		ghLinks.set(random, userId!);
 

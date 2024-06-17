@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { env, Errors, ghLinks } from "../utils.js";
+import { encryptToken, env, Errors, ghLinks } from "../utils.js";
 import { InitUser } from "../database/functions/user.js";
 import DiscordRestClient from "../rest.js";
 import { APIUser, Routes } from "discord-api-types/v10";
@@ -86,7 +86,7 @@ github.get("/callback", async (req, res) => {
 			followers: github_user.followers,
 			following: github_user.following,
 			created_at: github_user.created_at,
-			access_token: result.access_token,
+			access_token: encryptToken(result.access_token),
 		},
 	});
 	// return initializing result
