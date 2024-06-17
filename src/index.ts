@@ -23,14 +23,11 @@ import path from "node:path";
 import { connect } from "mongoose";
 import { FindUser } from "./database/functions/user.js";
 import { Octokit } from "@octokit/rest";
-// import StatusMonitor from "express-status-monitor";
 
 // routers
 import github from "./routers/github.js";
 
 const app: Application = express();
-
-// app.use(StatusMonitor());
 
 cacheCommands(commandsData);
 
