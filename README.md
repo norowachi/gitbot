@@ -66,5 +66,3 @@ Without docker adds some other extra steps, instead of `"3. The Docker Commands"
    > ```
 
 And now you also have your own local gitbot! (_yippe_)
-
-# DO NOT FORGET TO PUT YOUR {SITE_URL} IN THE "INTERACTION ENDPOINT URL" FIELD IN DEV PORTAL
