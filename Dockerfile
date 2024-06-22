@@ -27,4 +27,4 @@ COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/.env .env
 
-CMD pnpm start
+CMD pnpm run start

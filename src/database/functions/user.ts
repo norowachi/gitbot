@@ -3,9 +3,9 @@ import {
 	UserEnums,
 	DBUserOptions,
 	DBUser,
-} from "../../database/interfaces/user.js";
-import { Errors } from "../../utils.js";
-import user from "../schemas/user.js";
+} from "@database/interfaces/user.js";
+import { Errors } from "@utils";
+import user from "@database/schemas/user.js";
 
 // initialize a user document
 export async function InitUser(

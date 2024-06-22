@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-import { UN } from "../../utils.js";
+import { UN } from "@utils";
 
 /**
  * Options for the user document

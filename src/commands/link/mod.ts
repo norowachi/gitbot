@@ -1,4 +1,5 @@
 import {
+	APIInteraction,
 	APIInteractionResponseCallbackData,
 	ApplicationCommandType,
 	ButtonStyle,
@@ -6,9 +7,9 @@ import {
 	InteractionResponseType,
 	MessageFlags,
 } from "discord-api-types/v10";
-import { CommandData, env, ghLinks } from "../../utils.js";
-import { FindUser } from "../../database/functions/user.js";
-import { UserEnums } from "../../database/interfaces/user.js";
+import { CommandData, env, ghLinks } from "@utils";
+import { FindUser } from "@database/functions/user.js";
+import { UserEnums } from "@database/interfaces/user.js";
 import { randomBytes, hash } from "node:crypto";
 
 export default {
@@ -17,7 +18,8 @@ export default {
 	type: ApplicationCommandType.ChatInput,
 	contexts: [0, 1, 2],
 	integration_types: [0, 1],
-	run: async (res, interaction) => {
+	run: async (res) => {
+		const interaction = res.req.body as APIInteraction;
 		const userId = interaction.member?.user.id || interaction.user?.id;
 
 		// check if user is already linked

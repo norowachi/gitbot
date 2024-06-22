@@ -1,4 +1,5 @@
-import { ChangeConsoleColor, DateInISO, env, sleep } from "./utils.js";
+import { env } from "./utils.js";
+import { ChangeConsoleColor, DateInISO, sleep } from "@utils";
 import { EventEmitter } from "events";
 
 type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -77,5 +78,11 @@ export default class DiscordRestClient {
 			);
 
 		return json;
+	}
+
+	public get me() {
+		return {
+			id: env.DISCORD_APP_ID,
+		};
 	}
 }

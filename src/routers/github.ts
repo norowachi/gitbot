@@ -1,7 +1,6 @@
 import { Router } from "express";
-import { encryptToken, env, Errors, ghLinks } from "../utils.js";
-import { InitUser } from "../database/functions/user.js";
-import DiscordRestClient from "../rest.js";
+import { encryptToken, env, DiscordRestClient, Errors, ghLinks } from "@utils";
+import { InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
 
@@ -64,7 +63,7 @@ github.get("/callback", async (req, res) => {
 		Routes.user(discordID)
 	)) as APIUser;
 	// get the github user data
-	const github_user = (await octokit.rest.users.getAuthenticated()).data;
+	const github_user = (await octokit.users.getAuthenticated()).data;
 
 	// check if the returned user data is valid & if the access token is valid
 	if (!discord_user || !github_user || !discord_user.id || !github_user.id)

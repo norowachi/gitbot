@@ -5,12 +5,12 @@ import {
 	APIButtonComponent,
 	MessageFlags,
 	RESTPostAPIApplicationCommandsJSONBody,
-	APIApplicationCommandInteraction,
 } from "discord-api-types/v10";
 import type { Response } from "express";
 import { EventEmitter } from "events";
 import { Octokit } from "@octokit/rest";
-import { DBUser } from "./database/interfaces/user.js";
+import { DBUser } from "@database/interfaces/user.js";
+import { DiscordRestClient } from "@utils";
 
 /**
  * General Repeatitive Errors
@@ -94,19 +94,36 @@ export interface CommandData
 	/**
 	 *
 	 * @param res Response object
-	 * @param interaction Interaction object
+	 *
+	 * ~@param interaction Interaction object~
+	 * @param interaction can be accessed thru `res.req.body`
+	 * @param rest {DiscordRestClient} Discord REST client
 	 * @param [user, octokit] Db user object and octokit class passed in commands
-	 * @param sub subcommand group and subcommand if any in [subcommand group, subcommand] or [subcommand]
+	 * @param sub subcommand group and subcommand if any in [subcommand group, subcommand] or [subcommand] way
 	 * @param options options object filteredas a Record of key option name
 	 * @returns
 	 */
 	run: (
 		res: Response,
-		interaction: APIApplicationCommandInteraction,
+		rest: DiscordRestClient,
 		[user, octokit]: [DBUser, Octokit] | [],
 		sub?: string[],
 		options?: Map<string, any>
-	) => boolean | void | Promise<boolean | void>;
+	) => any;
+	/**
+	 * @param res Response object
+	 * @param interaction Interaction object
+	 * @param focused The focused field
+	 * @param [user, octokit] Db user object and octokit class passed in commands
+	 * @param options options object filtered as a Record of key option name
+	 * @returns
+	 */
+	autocomplete?: (
+		res: Response,
+		focused: string,
+		[user, octokit]: [DBUser, Octokit],
+		options?: Map<string, any>
+	) => any;
 }
 
 /**

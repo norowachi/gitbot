@@ -9,7 +9,7 @@
 	},
 	"scripts": {
 		"rebuild": "rm -rf dist && pnpm build",
-		"build": "tsc",
+		"build": "tsc && tsc-alias",
 		"register": "node dist/register.js",
 		"start": "node --disable-warning=ExperimentalWarning dist/index.js",
 		"dev": "pnpm build && pnpm run start",
@@ -26,7 +26,10 @@
 		"discord-api-types": "0.37.87",
 		"dotenv": "16.4.5",
 		"express": "4.19.2",
+		"fuse.js": "^7.0.0",
+		"level": "^8.0.1",
 		"mongoose": "8.4.1",
+		"tsc-alias": "^1.8.10",
 		"typescript": "5.4.5"
 	},
 	"devDependencies": {

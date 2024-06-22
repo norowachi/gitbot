@@ -10,7 +10,18 @@
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"strict": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"baseUrl": "./",
+		"paths": {
+			// src
+			"@/*": ["src/*"],
+			// db stuff
+			"@database/*": ["src/database/*"],
+			// the utils
+			"@utils": ["src/utils/utils.js"],
+			// technically cwd
+			"~/*": ["*"]
+		}
 	},
 	"include": ["src"]
 }

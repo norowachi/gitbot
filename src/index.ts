@@ -1,55 +1,119 @@
 import express, { Application } from "express";
 import {
 	verifyKeyMiddleware,
-	CommandData,
-	getOptionsValue,
-	getSub,
 	IntEmitter,
+	CommandData,
 	env,
 	commandsData,
-	runCommand,
 	decryptToken,
-} from "./utils.js";
+	getOptionsValue,
+	getSub,
+	ChangeConsoleColor,
+	DateInISO,
+	runCommand,
+	runCommandAutoComplete,
+	getFocusedField,
+	DiscordRestClient,
+} from "@utils";
 import {
 	InteractionResponseType,
 	InteractionType,
 	MessageFlags,
-	APIMessageComponentInteractionData as MessageComponentData,
-	APIModalSubmission,
 	APIInteraction,
 	APIChatInputApplicationCommandInteraction,
 } from "discord-api-types/v10";
 import fs from "node:fs";
 import path from "node:path";
 import { connect } from "mongoose";
-import { FindUser } from "./database/functions/user.js";
+import { FindUser } from "@database/functions/user.js";
 import { Octokit } from "@octokit/rest";
 
 // routers
-import github from "./routers/github.js";
+import github from "@/routers/github.js";
 
 const app: Application = express();
 
+// rest
+const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
+
+// cache the commands
 cacheCommands(commandsData);
 
+// using github router
 app.use("/github", github);
 
+// the interactions endpoint
 app.post(
 	"/interactions",
 	verifyKeyMiddleware(env.DISCORD_APP_PUBLIC_KEY!),
 	async (req, res) => {
 		let interaction: APIInteraction = req.body;
 
-		// if its a button emit a button event
-		if (interaction.type === InteractionType.MessageComponent) {
-			const intComponent = interaction.data as unknown as MessageComponentData;
-			IntEmitter.emit(intComponent.custom_id, [res, interaction]);
+		console.log(
+			DateInISO(),
+			ChangeConsoleColor(
+				"FgRed",
+				interaction.user?.username ||
+					interaction.member?.user.username ||
+					"Unknown"
+			),
+			"used",
+			ChangeConsoleColor(
+				"FgCyan",
+				(interaction.data as any)?.name,
+				interaction.type
+			),
+			"in",
+			ChangeConsoleColor(
+				"FgMagenta",
+				interaction.channel?.name,
+				"|",
+				interaction.channel?.id
+			)
+		);
+
+		// if its an autocomplete interaction
+		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+			// get DBUser
+			const DBUser = await FindUser({
+				discordId: interaction.user?.id || interaction.member?.user.id,
+			});
+
+			// if user isnt auth'd then ignore
+			if (!(DBUser && DBUser.github.access_token)) return;
+
+			// get the focused field
+			const focused = getFocusedField(interaction.data.options!);
+
+			// if focused field is not found then ignore
+			if (!focused) return;
+
+			// run command's autocomplete
+			await (
+				await runCommandAutoComplete(interaction.data.name!)
+			)(
+				res,
+				focused,
+				[
+					DBUser,
+					new Octokit({
+						auth: decryptToken(DBUser.github.access_token),
+						userAgent: "gitbot.norowa.dev",
+					}),
+				],
+				interaction.data?.options
+					? getOptionsValue(interaction.data?.options)
+					: undefined
+			);
 			return;
 		}
 
-		if (interaction.type === InteractionType.ModalSubmit) {
-			const intComponent = interaction.data as unknown as APIModalSubmission;
-			IntEmitter.emit(intComponent.custom_id, [res, interaction]);
+		// if its a message component or a modal submit emit an interaction with given custom id
+		if (
+			interaction.type === InteractionType.MessageComponent ||
+			interaction.type === InteractionType.ModalSubmit
+		) {
+			IntEmitter.emit(interaction.data.custom_id, [res, interaction]);
 			return;
 		}
 
@@ -97,7 +161,7 @@ app.post(
 				await runCommand(interaction.data.name!)
 			)(
 				res,
-				interaction,
+				rest,
 				octokit ? [DBUser!, octokit] : [],
 				getSub(interaction.data?.options?.at(0)),
 				interaction.data?.options
