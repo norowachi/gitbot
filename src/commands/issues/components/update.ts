@@ -26,8 +26,8 @@ export default async function Update(
 	const repo = oldOptions.get("repo");
 	const issue_number = oldOptions.get("issue_number");
 
-	// get pr info
-	const pullInfo = await octo.issues
+	// get issue info
+	const issueInfo = await octo.issues
 		.get({
 			owner,
 			repo,
@@ -44,11 +44,11 @@ export default async function Update(
 			return;
 		});
 
-	// if no pr info, i.e. error
-	if (!pullInfo) return;
+	// if no issue info, i.e. error
+	if (!issueInfo) return;
 
 	// set data
-	const data = pullInfo.data;
+	const data = issueInfo.data;
 
 	// updateable data
 	const { title, body, state, assignees, labels, milestone, state_reason } =
@@ -57,7 +57,7 @@ export default async function Update(
 	res.json({
 		type: InteractionResponseType.Modal,
 		data: {
-			title: `Update ${data.repository?.full_name} #${data.number}`,
+			title: `Update Issue #${data.number}`,
 			custom_id: data.id.toString(),
 			components: [
 				{
@@ -108,24 +108,10 @@ export default async function Update(
 						{
 							type: ComponentType.TextInput,
 							custom_id: "state_reason",
-							label: "State Reason ([C]ompleted, [R]eopened, [N]ot Planned)",
+							label: "Reason ([C]ompleted/[R]eopened/[N]ot Planned)",
 							style: TextInputStyle.Short,
 							placeholder: state_reason,
 							value: state_reason,
-							required: false,
-						},
-					],
-				},
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.TextInput,
-							custom_id: "assignees",
-							label: "Assignees",
-							style: TextInputStyle.Short,
-							placeholder: assignees?.map((a) => a?.login).join(", "),
-							value: assignees?.map((a) => a?.login).join(", "),
 							required: false,
 						},
 					],
@@ -144,20 +130,6 @@ export default async function Update(
 							value: labels
 								?.map((l) => (typeof l == "string" ? l : l.name))
 								.join(", "),
-							required: false,
-						},
-					],
-				},
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.TextInput,
-							custom_id: "milestone",
-							label: "Milestone",
-							style: TextInputStyle.Short,
-							placeholder: milestone?.title,
-							value: milestone?.title,
 							required: false,
 						},
 					],
@@ -193,9 +165,9 @@ export default async function Update(
 		const NewBody = map.get("body") || null;
 		const NewState = map.get("state");
 		const NewStateReason = map.get("state_reason");
-		const NewAssignees = map.get("assignees");
+		// const NewAssignees = map.get("assignees");
 		const NewLabels = map.get("labels");
-		const NewMilestone = map.get("milestone");
+		// const NewMilestone = map.get("milestone");
 
 		// if old = new
 		// or if new is empty
@@ -205,11 +177,11 @@ export default async function Update(
 			NewBody === body &&
 			NewState?.toLowerCase() === state.toLowerCase() &&
 			NewStateReason?.toLowerCase() === state_reason?.toLowerCase() &&
-			NewAssignees?.toLowerCase() ===
-				assignees?.map((a) => a?.login).join(", ") &&
+			// NewAssignees?.toLowerCase() ===
+			// 	assignees?.map((a) => a?.login).join(", ") &&
 			NewLabels?.toLowerCase() ===
-				labels?.map((l) => (typeof l == "string" ? l : l.name)).join(", ") &&
-			NewMilestone?.toLowerCase() === milestone?.title
+				labels?.map((l) => (typeof l == "string" ? l : l.name)).join(", ")
+			// && NewMilestone?.toLowerCase() === milestone?.title
 		) {
 			args[0].json({
 				type: InteractionResponseType.ChannelMessageWithSource,
@@ -269,9 +241,11 @@ export default async function Update(
 						? "reopened"
 						: "not_planned"
 					: undefined,
-				assignees: NewAssignees?.split(",").map((a: string) => a.trim()),
-				labels: NewLabels?.split(",").map((l: string) => l.trim()),
-				milestone: NewMilestone,
+				// assignees: NewAssignees?.split(",").map((a: string) => a.trim()),
+				labels: NewLabels
+					? NewLabels?.split(",").map((l: string) => ({ name: l.trim() }))
+					: [],
+				// milestone: NewMilestone,
 				owner,
 				repo,
 				issue_number,

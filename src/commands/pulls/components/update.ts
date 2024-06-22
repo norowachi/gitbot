@@ -50,7 +50,7 @@ export default async function updateModal(
 	res.json({
 		type: InteractionResponseType.Modal,
 		data: {
-			title: `Update ${base.label} #${data.number}`,
+			title: `Update ${base.label} PR #${data.number}`,
 			custom_id: data.id.toString(),
 			components: [
 				{
