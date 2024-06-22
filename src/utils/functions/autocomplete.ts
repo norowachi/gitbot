@@ -1,5 +1,6 @@
 import { Octokit } from "@octokit/rest";
-import { getUser } from "@utils";
+import { getUser, getUsers } from "@utils";
+import { APIApplicationCommandOptionChoice } from "discord-api-types/v10";
 import Fuse from "fuse.js";
 
 /**
@@ -44,23 +45,22 @@ export async function handlePullNumberAutocomplete(
 	isAuthed: boolean = false,
 	partialNumber?: string
 ) {
+	let pulls: null | number[] = null;
 	// get user
 	const user = await getUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	const repoData = user.repos.find(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
 	);
-	if (!repoData) return;
+	if (!repoData)
+		pulls = (await octo.pulls.list({ owner, repo })).data.map((p) => p.number);
+	else pulls = repoData.pulls;
 
 	// if no partial number, return all the pull numbers
-	if (!partialNumber) return repoData.pulls.map((p) => `#${p}`).slice(0, 25);
+	if (!partialNumber) return pulls.slice(0, 25);
 
 	// filter pulls to get the ones that includes with the partial number
-	const pulls = repoData.pulls
-		.filter((p) => p.toString().includes(partialNumber))
-		.map((p) => `#${p}`)
-		.slice(0, 25);
-	return pulls;
+	return pulls.filter((p) => p.toString().includes(partialNumber)).slice(0, 25);
 }
 
 /**
@@ -74,21 +74,108 @@ export async function handleIssueNumberAutocomplete(
 	isAuthed: boolean = false,
 	partialNumber?: string
 ) {
+	let issues: null | number[] = null;
 	// get user
 	const user = await getUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	const repoData = user.repos.find(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
 	);
-	if (!repoData) return;
+	if (!repoData)
+		issues = (await octo.issues.listForRepo({ owner, repo })).data.map(
+			(i) => i.number
+		);
+	else issues = repoData.issues;
 
 	// if no partial number, return all the issue numbers
-	if (!partialNumber) return repoData.issues.map((i) => `#${i}`).slice(0, 25);
+	if (!partialNumber) return issues.slice(0, 25);
 
 	// filter issues to get the ones that includes with the partial number
-	const issues = repoData.issues
+	return issues
 		.filter((i) => i.toString().includes(partialNumber))
-		.map((i) => `#${i}`)
 		.slice(0, 25);
-	return issues;
+}
+
+/**
+ * handle label autocomplete
+ */
+export async function handleLabelAutocomplete(
+	octo: Octokit,
+	owner: string,
+	repo: string,
+	isAuthed: boolean = false,
+	partialLabel?: string
+) {
+	// get user
+	const user = await getUser(octo, owner, isAuthed);
+	if (!user || !user.repos) return;
+	const repoData = user.repos.find(
+		(r) => r.name.toLowerCase() === repo.toLowerCase()
+	);
+
+	// separating the labels
+	const curval = [...new Set(partialLabel?.split(/,\s*/g))].map((v) =>
+		v.trim().toLowerCase()
+	);
+
+	// fn to join the labels' names and values
+	const joinLabels = (c: APIApplicationCommandOptionChoice[]) =>
+		c
+			.map((c) => ({ ...c, value: String(c.value).trim().toLowerCase() }))
+			.filter(
+				(v) =>
+					!curval.at(-1)?.includes(String(v.value)) || curval.at(-1) === v.value
+			)
+			.map((v) => ({
+				name: (curval.slice(0, -1).join(", ") + ", " + v.name).replace(
+					/^,\s*/gm,
+					""
+				),
+				value: (curval.slice(0, -1).join(", ") + ", " + v.value).replace(
+					/^,\s*/gm,
+					""
+				),
+			}))
+			.filter(
+				(v) => v.value === [...new Set(v.value.split(/,\s*/g))].join(", ")
+			);
+	if (!repoData)
+		return {
+			choices: joinLabels(
+				(await octo.issues.listLabelsForRepo({ owner, repo })).data.map(
+					(l) => ({
+						name: l.name,
+						value: l.name,
+					})
+				)
+			).slice(0, 25),
+		};
+
+	return {
+		choices: joinLabels(
+			repoData.labels.map((l) => ({ name: l, value: l }))
+		).slice(0, 25),
+	};
+}
+
+/**
+ * handle user autocomplete
+ * which includes owner, assignees, reviewers, etc.
+ */
+export async function handleUserAutocomplete(
+	login: string,
+	partialUser?: string
+) {
+	const users = [...new Set([...(await getUsers()), login])];
+
+	if (!partialUser) return users.slice(0, 25);
+
+	// fuzzy search the users
+	const search = new Fuse(users, {
+		includeScore: true,
+		// sort by score
+		sortFn: (a, b) => a.score - b.score,
+	}).search(partialUser);
+
+	return search.map((r) => r.item).slice(0, 25);
 }
