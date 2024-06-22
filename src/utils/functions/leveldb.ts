@@ -24,7 +24,6 @@ export async function upsertUser(
 	const data = {
 		login: response.data.login,
 		repos: await getGHUserRepos(octo, login),
-		last_updated: Date.now(),
 	};
 	await db.put(response.data.login, data);
 	// return data
@@ -46,11 +45,6 @@ export async function getUser(
 	try {
 		const user = await db.get(login);
 		if (!user) return await upsertUser(octo, isAuthed ? undefined : login);
-		// update on interaction, every hour
-		// if last updated is more than an hour ago
-		if (user.last_updated + 1000 * 60 * 60 * 1 < Date.now()) {
-			return await upsertUser(octo, isAuthed ? undefined : login);
-		}
 		return user;
 	} catch (e) {
 		return await upsertUser(octo, isAuthed ? undefined : login);
@@ -81,11 +75,14 @@ export async function getGHUserRepos(octo: Octokit, login?: string) {
 			const pulls = await getPulls(octo, d as any);
 			// get repo's issues
 			const issues = await getIssues(octo, d as any);
+			// get repo's labels
+			const labels = await getLabels(octo, d as any);
 			// set LevelRepo obj
 			return {
 				name: d.name,
 				pulls: pulls ? pulls.data.map((p) => p.number) : [],
 				issues: issues ? issues.data.map((i) => i.number) : [],
+				labels: labels ? labels.data.map((l) => l.name) : [],
 			} as LevelRepo;
 		})
 	);
@@ -121,3 +118,20 @@ const getPulls = async (
 			per_page: 50,
 		})
 		.catch((_) => {});
+// get labels
+const getLabels = async (
+	octo: Octokit,
+	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
+) =>
+	await octo.issues
+		.listLabelsForRepo({
+			owner: d.owner.login,
+			repo: d.name,
+			per_page: 50,
+		})
+		.catch((_) => {});
+
+// get all users (db keys)
+export async function getUsers() {
+	return await db.keys().all();
+}

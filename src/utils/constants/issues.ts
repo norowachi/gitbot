@@ -15,7 +15,37 @@ export const IssueOptions: APIApplicationCommandOption[] = [
 		options: [
 			RequiredOptions.owner,
 			RequiredOptions.repo,
-			//TODO: add the options
+			{
+				name: "title",
+				description: "The title of the issue",
+				type: ApplicationCommandOptionType.String,
+				required: true,
+			},
+			{
+				name: "body",
+				description: "The contents of the issue",
+				type: ApplicationCommandOptionType.String,
+			},
+			{
+				name: "labels",
+				description: "An array of label names",
+				type: ApplicationCommandOptionType.String,
+				required: false,
+				autocomplete: true,
+			},
+			{
+				name: "assignees",
+				description: "An array of user names",
+				type: ApplicationCommandOptionType.String,
+				required: false,
+				autocomplete: true,
+			},
+			{
+				name: "milestone",
+				description: "The milestone number",
+				type: ApplicationCommandOptionType.Integer,
+				required: false,
+			},
 		],
 	},
 	{
@@ -25,7 +55,7 @@ export const IssueOptions: APIApplicationCommandOption[] = [
 		options: [
 			RequiredOptions.owner,
 			RequiredOptions.repo,
-			//TODO: RequiredOptions.issue_number
+			RequiredOptions.issue_number,
 		],
 	},
 	{
@@ -35,7 +65,7 @@ export const IssueOptions: APIApplicationCommandOption[] = [
 		options: [
 			RequiredOptions.owner,
 			RequiredOptions.repo,
-			//TODO: RequiredOptions.issue_number
+			RequiredOptions.issue_number,
 		],
 	},
 	{
@@ -45,7 +75,22 @@ export const IssueOptions: APIApplicationCommandOption[] = [
 		options: [
 			RequiredOptions.owner,
 			RequiredOptions.repo,
-			//TODO: RequiredOptions.issue_number
+			RequiredOptions.issue_number,
+			{
+				name: "reason",
+				description: "The reason for closing the issue",
+				type: ApplicationCommandOptionType.String,
+				choices: [
+					{
+						name: "Completed",
+						value: "completed",
+					},
+					{
+						name: "Not Planned",
+						value: "not_planned",
+					},
+				],
+			},
 		],
 	},
 ];

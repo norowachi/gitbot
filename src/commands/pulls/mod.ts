@@ -8,6 +8,7 @@ import {
 	PullsOptions,
 	handlePullNumberAutocomplete,
 	handleRepoAutocomplete,
+	handleUserAutocomplete,
 } from "@utils";
 import Update from "./components/update.js";
 import Create from "./components/create.js";
@@ -23,23 +24,26 @@ export default {
 	options: PullsOptions,
 	autocomplete: async (res, focused, gh, options) => {
 		const owner = options?.get("owner");
-		if (!owner)
-			return res.json({
-				type: InteractionResponseType.ApplicationCommandAutocompleteResult,
-				data: {
-					choices: [
-						{
-							name: gh[0]!.github.login,
-							value: gh[0]!.github.login,
-						},
-					],
-				},
-			});
 		const repo = options?.get("repo");
 		const pull_number = options?.get("pull_number");
 		// switch the focused option
 		switch (focused) {
+			case "owner": {
+				return res.json({
+					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
+					data: {
+						choices: (
+							await handleUserAutocomplete(
+								gh[0]!.github.login,
+								options?.get("owner")
+							)
+						).map((user) => ({ name: user, value: user })),
+					},
+				});
+			}
 			case "repo": {
+				// requirements
+				if (!owner) return;
 				// get repos filtered
 				const array = await handleRepoAutocomplete(
 					gh[1],
@@ -60,7 +64,7 @@ export default {
 			}
 			case "pull_number": {
 				// if no repo is specified, return
-				if (!repo) return;
+				if (!repo || !owner) return;
 				// get pull numbers filtered
 				const array = await handlePullNumberAutocomplete(
 					gh[1],

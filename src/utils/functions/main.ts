@@ -14,7 +14,14 @@ import {
 	APIApplicationCommandInteractionDataOption,
 	ApplicationCommandOptionType,
 } from "discord-api-types/v10";
-import { ConsoleColors, emojis, IntEmitter, commandsData, env, DiscordRestClient } from "@utils";
+import {
+	ConsoleColors,
+	emojis,
+	IntEmitter,
+	commandsData,
+	env,
+	DiscordRestClient,
+} from "@utils";
 import { Endpoints } from "@octokit/types";
 
 /**
@@ -132,7 +139,7 @@ export function DateInISO(shard_id: number | null = null) {
 	);
 }
 
-/* change color of text in console */
+/** change color of text in console */
 export function ChangeConsoleColor(
 	color: keyof typeof ConsoleColors,
 	...value: any[]
@@ -140,6 +147,11 @@ export function ChangeConsoleColor(
 	return `${ConsoleColors[color]}${value.map((v) => v).join(" ")}${
 		ConsoleColors.Reset
 	}`;
+}
+
+/** change date-time string to discord timestamp format */
+export function DiscordTimestamp(date: string, format: "R" | "f" | "F") {
+	return `<t:${Math.floor(new Date(date).getTime() / 1000)}:${format}>`;
 }
 
 /**
@@ -361,28 +373,24 @@ export function CreatePREmbed(
 			{
 				name: "Labels",
 				value:
-					data.labels.length > 0
-						? data.labels.map((l) => "`" + l.name + "`").join(", ")
+					data.labels?.length > 0
+						? data.labels.map((l) => `\`${l.name}\``).join(", ")
 						: "No Labels",
 				inline: true,
 			},
 			{
 				name: "Misc",
 				value: [
-					`**Created at**: <t:${Math.floor(
-						new Date(data.created_at).getTime() / 1000
-					)}:f>`,
+					`**Created at**: ${DiscordTimestamp(data.created_at, "f")}`,
 					`**Draft**: ${data.draft}`,
 					`**Maintainer Can Modify**: ${data.maintainer_can_modify}`,
 					data.mergeable
 						? `**Mergeable**: ${data.mergeable}, **Mergable State**: ${data.mergeable_state}\n**Merge Commit SHA**: ${data.merge_commit_sha}`
 						: `**Merged**: ${data.merged}${
 								data.merged
-									? `, By [\`${data.merged_by?.login}\`](${
-											data.merged_by?.html_url
-									  }), At <t:${Math.floor(
-											new Date(data.merged_at!).getTime() / 1000
-									  )}:f>`
+									? `, at ${DiscordTimestamp(data.merged_at!, "f")}, by [\`${
+											data.merged_by?.login
+									  }\`](${data.merged_by?.html_url})`
 									: ""
 						  }`,
 					`**State**: ${data.state}, **Locked**: ${data.locked}${
@@ -419,5 +427,72 @@ export function CreatePREmbed(
 		});
 	}
 
+	return embed;
+}
+
+export function CreateIssueEmbed(
+	data: Endpoints["GET /repos/{owner}/{repo}/issues/{issue_number}"]["response"]["data"]
+) {
+	const embed: APIEmbed = {
+		title: `${data.title} #${data.number}`,
+		author: {
+			name: `${data.user?.login} (${data.author_association})`,
+			icon_url: data.user?.avatar_url,
+			url: data.user?.html_url,
+		},
+		url: data.html_url,
+		description:
+			data.body && data.body.length > 1000
+				? data.body.slice(0, 1000) + `\n\n[**...**](${data.html_url})`
+				: data.body || "No Description",
+		fields: [
+			{
+				name: "Labels",
+				value:
+					data.labels?.length > 0
+						? data.labels
+								.map((l) => `\`${typeof l === "string" ? l : l.name}\``)
+								.join(", ")
+						: "No Labels",
+				inline: true,
+			},
+			{
+				name: "Misc",
+				value: [
+					`**State**: ${data.state}${
+						data.state == "closed"
+							? `, at ${
+									data.closed_at ? DiscordTimestamp(data.closed_at, "f") : "N/A"
+							  }, by ${
+									data.closed_by
+										? `[\`${data.closed_by.login}\`](${data.closed_by.html_url})`
+										: "N/A"
+							  }`
+							: ""
+					}`,
+					`**Locked**: ${data.locked}${
+						data.locked && data.active_lock_reason
+							? ", **Reason**:" + data.active_lock_reason
+							: ""
+					}`,
+
+					,
+				].join("\n"),
+				inline: true,
+			},
+		],
+	};
+
+	// if there's assignees
+	if (data.assignees && data.assignees.length > 0) {
+		embed.fields?.unshift({
+			name: "Assignees",
+			value: data.assignees
+				.map((as) => `[\`${as.login}\`](${as.html_url})`)
+				.join(", "),
+		});
+	}
+
+	// return the embed
 	return embed;
 }

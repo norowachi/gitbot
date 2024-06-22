@@ -5,12 +5,13 @@ import {
 	APIButtonComponent,
 	MessageFlags,
 	RESTPostAPIApplicationCommandsJSONBody,
+	Routes,
 } from "discord-api-types/v10";
 import type { Response } from "express";
 import { EventEmitter } from "events";
 import { Octokit } from "@octokit/rest";
 import { DBUser } from "@database/interfaces/user.js";
-import { DiscordRestClient } from "@utils";
+import { DiscordRestClient, env } from "@utils";
 
 /**
  * General Repeatitive Errors
@@ -30,21 +31,21 @@ export class CustomIntEmitter extends EventEmitter {
 		setTimeout(() => {
 			if (!event) return;
 			super.removeAllListeners(event);
-			if (response.writable) {
-				response.json({
-					type: InteractionResponseType.UpdateMessage,
-					data: {
-						components: [
-							{
-								label: "Interaction timed out!",
-								custom_id: "timedoutbtn",
-								disabled: true,
-								style: ButtonStyle.Danger,
-							} as APIButtonComponent,
-						],
-					},
-				});
-			}
+			const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
+			rest.req(
+				"PATCH",
+				Routes.webhookMessage(rest.me.id, args[1].token, "@original"),
+				{
+					components: [
+						{
+							label: "Interaction timed out!",
+							custom_id: "timedoutbtn",
+							disabled: true,
+							style: ButtonStyle.Danger,
+						} as APIButtonComponent,
+					],
+				}
+			);
 		}, 30 * 60 * 1000);
 
 		// Call the original emit method to emit the event

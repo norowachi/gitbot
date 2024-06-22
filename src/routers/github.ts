@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { json, Router } from "express";
 import { encryptToken, env, DiscordRestClient, Errors, ghLinks } from "@utils";
 import { InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
@@ -93,9 +93,17 @@ github.get("/callback", async (req, res) => {
 });
 
 // the webhooks route
-github.post("/webhook", (req, res) => {
-	console.log(req);
-	console.log(req.body);
+//TODO: use the webhook to manage uh stuff?
+github.post("/webhook", json(), (req, res) => {
+	console.log(
+		"[WEBHOOK]",
+		req.body.issue
+			? "issue"
+			: req.body.pull_request
+			? "pull_request"
+			: "unknown",
+		req.body.action
+	);
 	res.sendStatus(200);
 });
 

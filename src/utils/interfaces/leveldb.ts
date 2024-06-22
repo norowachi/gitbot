@@ -5,7 +5,6 @@
 export interface LevelUser {
 	login: string;
 	repos?: LevelRepo[];
-	last_updated: number;
 }
 
 /**
@@ -21,4 +20,8 @@ export interface LevelRepo {
 	 * Issue IDs (numbers)
 	 */
 	issues: number[];
+	/**
+	 * Labels (title/name)
+	 */
+	labels: string[];
 }

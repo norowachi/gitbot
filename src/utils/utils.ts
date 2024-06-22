@@ -305,7 +305,7 @@ export function decryptToken(encryptedToken: string): string {
 }
 
 /**
- * Updates the @original interaction response to clears all the components
+ * Updates the `@original` interaction response to clears all the components
  * @param rest The Discord REST Client
  * @param interaction The interaction object
  * @returns {Promise<RESTPatchAPIInteractionOriginalResponseJSONBody>}
@@ -316,7 +316,7 @@ export async function ClearComponents(
 ): Promise<RESTPatchAPIInteractionOriginalResponseJSONBody> {
 	return await rest.req(
 		"PATCH",
-		Routes.webhookMessage(interaction.id, interaction.token, "@original"),
+		Routes.webhookMessage(rest.me.id, interaction.token, "@original"),
 		{
 			components: [],
 		}
