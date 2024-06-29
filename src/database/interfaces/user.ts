@@ -32,10 +32,6 @@ export interface DBUser {
 		 * user id
 		 */
 		id: string;
-		/**
-		 * username, unique
-		 */
-		username: string;
 	};
 	github: {
 		/**

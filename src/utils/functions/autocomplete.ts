@@ -88,7 +88,7 @@ export async function handleIssueNumberAutocomplete(
 	else issues = repoData.issues;
 
 	// if no partial number, return all the issue numbers
-	if (!partialNumber) return issues.slice(0, 25);
+	if (!partialNumber) return issues?.slice(0, 25) || [];
 
 	// filter issues to get the ones that includes with the partial number
 	return issues

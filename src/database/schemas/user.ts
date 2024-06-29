@@ -3,7 +3,6 @@ import { Schema, model } from "mongoose";
 const UserData = new Schema({
 	discord: {
 		id: { type: String, unique: true },
-		username: String,
 	},
 	github: {
 		id: { type: String, unique: true },

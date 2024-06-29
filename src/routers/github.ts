@@ -73,7 +73,6 @@ github.get("/callback", async (req, res) => {
 	const InitUserResult = await InitUser({
 		discord: {
 			id: discord_user.id,
-			username: discord_user.username,
 		},
 		github: {
 			id: github_user.id.toString(),

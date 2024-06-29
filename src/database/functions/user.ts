@@ -25,7 +25,6 @@ export async function InitUser(
 		.create({
 			discord: {
 				id: options.discord.id,
-				username: options.discord.username,
 			},
 			github: {
 				id: options.github.id,
