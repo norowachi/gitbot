@@ -23,5 +23,19 @@
 			"~/*": ["*"]
 		}
 	},
-	"include": ["src"]
+	"include": ["src"],
+	"exclude": [
+		"node_modules",
+		"dist",
+		// test files
+		"*.test.*",
+		// archived files
+		"*.arch",
+		// backup files
+		"*.bak",
+		// temporary files
+		"*.tmp",
+		// logs
+		"*.log"
+	]
 }

@@ -59,6 +59,12 @@ export default {
 								label: "Sign in",
 								url: `${env.SITE_URL}/github/verify/${random}`,
 							},
+							{
+								type: ComponentType.Button,
+								style: ButtonStyle.Link,
+								label: "Add Your Own Private Key",
+								url: `${env.SITE_URL}/github/cancel/${random}`,
+							},
 						],
 					},
 				],

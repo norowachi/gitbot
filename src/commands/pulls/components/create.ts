@@ -7,13 +7,13 @@ import {
 	ButtonStyle,
 } from "discord-api-types/v10";
 import {
-	IntEmitter,
+	// IntEmitter,
 	DiscordRestClient,
-	ClearComponents,
+	// ClearComponents,
 	CreatePREmbed,
 	OctoErrMsg,
 } from "@utils";
-import Update from "./update.js";
+// import Update from "./update.js";
 
 export default async function Create(
 	res: Response,
@@ -106,17 +106,18 @@ export default async function Create(
 	// create the embed
 	const embed = CreatePREmbed(data);
 
-	// handle button clicks
-	// modal update click
-	IntEmitter.on(updateModalBtn, async (...args) => {
-		// call the update pr modal
-		await Update(args[0], octo, options);
-		// clear the components
-		await ClearComponents(rest, res.req.body);
-		// if the modal is closed, and everything successful, remove the listener
-		IntEmitter.removeAllListeners(updateModalBtn);
-		return;
-	});
+	//! The update (MODAL) button stuff
+	// // handle button clicks
+	// // modal update click
+	// IntEmitter.on(updateModalBtn, async (...args) => {
+	// 	// call the update pr modal
+	// 	await Update(args[0], octo, options);
+	// 	// clear the components
+	// 	await ClearComponents(rest, res.req.body);
+	// 	// if the modal is closed, and everything successful, remove the listener
+	// 	IntEmitter.removeAllListeners(updateModalBtn);
+	// 	return;
+	// });
 
 	// button components to be added
 	const components = [
@@ -125,9 +126,12 @@ export default async function Create(
 			components: [
 				{
 					type: ComponentType.Button,
-					style: ButtonStyle.Primary,
-					label: "Update",
-					custom_id: updateModalBtn,
+					// style: ButtonStyle.Primary,
+					style: ButtonStyle.Link,
+					// label: "Update",
+					label: "Edit",
+					// custom_id: updateModalBtn,
+					url: `https://github.com/${owner}/${repo}/pull/${data.number}`,
 				},
 			],
 		},

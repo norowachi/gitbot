@@ -10,7 +10,7 @@ import {
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
 } from "@utils";
-import Update from "./components/update.js";
+// import Update from "./components/update.js";
 import Create from "./components/create.js";
 import Get from "./components/get.js";
 import Close from "./components/close.js";
@@ -94,7 +94,16 @@ export default {
 				await Create(res, rest, gh[1]!, options!);
 				return;
 			case "update":
-				await Update(res, gh[1]!, options!);
+				// await Update(res, gh[1]!, options!);
+				res.json({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content: `https://github.com/${options?.get(
+							"owner"
+						)}/${options?.get("repo")}/issues/${options?.get("issue_number")}`,
+						flags: MessageFlags.Ephemeral,
+					},
+				});
 				return;
 			case "get":
 				await Get(res, rest, gh[1]!, options!);
