@@ -12,7 +12,7 @@ import { CommandData, CustomIntEmitter } from "@utils";
 import DiscordRestClient from "./rest.js";
 
 // export the everything from here
-export { default as DiscordRestClient } from "./rest.js";
+export { DiscordRestClient };
 export * from "./interfaces/index.js";
 export * from "./functions/index.js";
 export * from "./constants/index.js";
@@ -22,10 +22,7 @@ config();
 export const env = {
 	PORT: process.env.PORT || 5000,
 	get SITE_URL() {
-		return (
-			process.env.SITE_URL?.replace(/\/$/, "") ||
-			`http://localhost:${this.PORT}`
-		);
+		return process.env.SITE_URL?.replace(/\/$/, "");
 	},
 	MONGO_URI: process.env.MONGO_URI!,
 	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
