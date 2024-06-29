@@ -64,7 +64,7 @@ export default {
 								style: ButtonStyle.Link,
 								label: "Add Your Own Private Key",
 								url: `${env.SITE_URL}/github/cancel/${random}`,
-							},
+							}, 
 						],
 					},
 				],
