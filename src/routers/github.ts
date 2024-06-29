@@ -47,8 +47,10 @@ github.get("/callback", async (req, res) => {
 		.json()
 		.catch(() => {
 			res.send(Errors.Unexpected);
+			return;
 		});
 
+	if (!result) return;
 	// check if the access token is valid
 	if (!result.access_token) return res.sendStatus(400);
 

@@ -205,3 +205,8 @@ async function cacheCommands(
 		}
 	}
 }
+
+// handle unhandled rejections
+process.on("unhandledRejection", (e) => {
+	console.error("unhandledRejection", e);
+});

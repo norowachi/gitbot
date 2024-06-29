@@ -127,6 +127,8 @@ export default {
 	},
 } as CommandData;
 
+
+//TODO remove this after implementing or if not even implementing
 // // gh[1]?.rest.pulls.checkIfMerged;
 // // gh[1]?.rest.pulls.create;
 // // button

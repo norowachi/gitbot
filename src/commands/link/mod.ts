@@ -19,9 +19,7 @@ import {
 import { FindUser, InitUser } from "@database/functions/user.js";
 import { UserEnums } from "@database/interfaces/user.js";
 import { randomBytes, hash } from "node:crypto";
-import { inspect } from "node:util";
 import { Octokit } from "@octokit/rest";
-import { set } from "mongoose";
 
 export default {
 	name: "link",
@@ -43,14 +41,14 @@ export default {
 			});
 
 		// check if user is already linked
-		// if (await FindUser({ discordId: userId }))
-		// 	return res.json({
-		// 		type: InteractionResponseType.ChannelMessageWithSource,
-		// 		data: {
-		// 			content: UserEnums.DiscordLinked,
-		// 			flags: MessageFlags.Ephemeral,
-		// 		},
-		// 	});
+		if (await FindUser({ discordId: userId }))
+			return res.json({
+				type: InteractionResponseType.ChannelMessageWithSource,
+				data: {
+					content: UserEnums.DiscordLinked,
+					flags: MessageFlags.Ephemeral,
+				},
+			});
 
 		// generate a random hash
 		const random = hash("sha256", randomBytes(16));
@@ -171,7 +169,7 @@ async function CreateKeyModal(userId: string, res: any) {
 						components: [
 							{
 								type: ComponentType.Button,
-								style: ButtonStyle.Primary,
+								style: ButtonStyle.Success,
 								label: "Yes",
 								custom_id: `accept-${userId}`,
 							},

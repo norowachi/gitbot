@@ -57,3 +57,8 @@ export async function FindUser({
 		$or: [{ "discord.id": discordId }, { "github.id": githubId }],
 	});
 }
+
+// Delete a user document by discord id
+export async function DeleteUser(discordId: string) {
+	return await user.deleteOne({ "discord.id": discordId });
+}
