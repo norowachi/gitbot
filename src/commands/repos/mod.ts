@@ -62,6 +62,19 @@ export default {
 	},
 	run: async (res, rest, gh, sub, options) => {
 		switch (sub![0]) {
+			// list repositories
+			case "list": {
+				// get repositories
+				const repositories = await gh[1].repos.listForAuthenticatedUser();
+				// send the message
+				return res.json({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content: `You have ${repositories.data.length} repositories`,
+						flags: MessageFlags.Ephemeral,
+					},
+				});
+			}
 			default:
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
@@ -72,4 +85,4 @@ export default {
 				});
 		}
 	},
-} as CommandData;
+} as CommandData<true>;

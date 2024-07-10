@@ -53,7 +53,7 @@ export class CustomIntEmitter extends EventEmitter {
  * @param description - The description of the command.
  * @param run - The function to run when the command is called.
  */
-export interface CommandData
+export interface CommandData<T extends boolean = false>
 	extends Omit<
 		RESTPostAPIApplicationCommandsJSONBody,
 		"id" | "application_id"
@@ -89,7 +89,9 @@ export interface CommandData
 	run: (
 		res: Response,
 		rest: DiscordRestClient,
-		[user, octokit]: [DBUser, Octokit] | [],
+		[user, octokit]: T extends true
+			? [DBUser, Octokit]
+			: [DBUser, Octokit] | [],
 		sub?: string[],
 		options?: Map<string, any>
 	) => any;

@@ -59,7 +59,7 @@ export default {
 			res,
 			focused,
 			gh,
-			options?.set("owner", gh[0]!.github.login)
+			options?.set("owner", gh[0].github.login)
 		);
 	},
 	run: async (res, rest, gh, sub: any[], options) => {
@@ -68,7 +68,7 @@ export default {
 			rest,
 			gh,
 			sub?.slice(1),
-			options?.set("owner", gh[0]!.github.login)
+			options?.set("owner", gh[0].github.login)
 		);
 	},
-} as CommandData;
+} as CommandData<true>;

@@ -113,10 +113,10 @@ export default {
 	run: async (res, rest, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, rest, gh[1]!, options!);
+				await Create(res, rest, gh[1], options!);
 				return;
 			case "update":
-				// await Update(res, gh[1]!, options!);
+				// await Update(res, gh[1], options!);
 				res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
@@ -128,10 +128,10 @@ export default {
 				});
 				return;
 			case "get":
-				await Get(res, rest, gh[1]!, options!);
+				await Get(res, rest, gh[1], options!);
 				return;
 			case "close":
-				await Close(res, gh[1]!, options!);
+				await Close(res, gh[1], options!);
 				return;
 			default:
 				return res.json({
@@ -143,4 +143,4 @@ export default {
 				});
 		}
 	},
-} as CommandData;
+} as CommandData<true>;

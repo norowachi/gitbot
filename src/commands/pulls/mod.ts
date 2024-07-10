@@ -91,29 +91,29 @@ export default {
 	run: async (res, rest, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, rest, gh[1]!, options!);
+				await Create(res, rest, gh[1], options!);
 				return;
 			case "update":
-				// await Update(res, gh[1]!, options!);
+				// await Update(res, gh[1], options!);
 				res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
 						content: `https://github.com/${options?.get(
 							"owner"
-						)}/${options?.get("repo")}/issues/${options?.get("issue_number")}`,
+						)}/${options?.get("repo")}/pulls/${options?.get("pull_number")}`,
 						flags: MessageFlags.Ephemeral,
 					},
 				});
 				return;
 			case "get":
-				await Get(res, rest, gh[1]!, options!);
+				await Get(res, rest, gh[1], options!);
 				return;
 			//TODO: Finish this shit
 			// case "merge":
 			// 	await Merge(res, rest, gh[1]!, options!);
 			// 	return;
 			case "close":
-				await Close(res, gh[1]!, options!);
+				await Close(res, gh[1], options!);
 				return;
 			default:
 				return res.json({
@@ -125,8 +125,7 @@ export default {
 				});
 		}
 	},
-} as CommandData;
-
+} as CommandData<true>;
 
 //TODO remove this after implementing or if not even implementing
 // // gh[1]?.rest.pulls.checkIfMerged;

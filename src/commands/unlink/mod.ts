@@ -88,4 +88,4 @@ export default {
 			return;
 		});
 	},
-} as CommandData;
+} as CommandData<true>;

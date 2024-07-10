@@ -57,7 +57,7 @@ export default {
 
 		// remove user from ghlinks after 10 mins
 		setTimeout(() => {
-			ghLinks.has(random) ? ghLinks.delete(random) : null;
+			if (ghLinks.has(random)) ghLinks.delete(random);
 		}, 10 * 60 * 1000);
 
 		// send sign up link
