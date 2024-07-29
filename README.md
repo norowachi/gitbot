@@ -21,20 +21,25 @@ now onto the real talk
 
 ## SelfHosting without docker
 
-1. [Download NodeJS](https://nodejs,org/en/download)
-2. Install pnpm
+1. Clone the repo
+   > ```sh
+   > git clone https://github.com/Noro95/gitbot && cd gitbot
+   > ```
+2. Create a `.env` file and fill it according to `example.env`
+3. [Download NodeJS](https://nodejs,org/en/download)
+4. Install pnpm
    > ```sh
    > npm i -g pnpm@latest
    > ```
-3. Go to project Dir. & Install all dependencies
+5. Go to project Dir. & Install all dependencies
    > ```
    > pnpm i -P --frozen-lockfile
    > ```
-4. Register commands
+6. Register commands
    > ```
    > pnpm register
    > ```
-5. Finally start the gitbot
+7. Finally start the gitbot
    > ```
    > pnpm start
    > ```
