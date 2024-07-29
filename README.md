@@ -18,8 +18,33 @@ now onto the real talk
 3. A [MongoDB](https://mongodb.com) DataBase
    > learn how to create one [here](https://www.mongodb.com/resources/products/fundamentals/create-database)
 4. [Docker](https://docker.com) (Optional)
-   
+
+## SelfHosting without docker
+
+1. [Download NodeJS](https://nodejs,org/en/download)
+2. Install pnpm
+   > ```sh
+   > npm i -g pnpm@latest
+   > ```
+3. Go to project Dir. & Install all dependencies
+   > ```
+   > pnpm i -P --frozen-lockfile
+   > ```
+4. Register commands
+   > ```
+   > pnpm register
+   > ```
+5. Finally start the gitbot
+   > ```
+   > pnpm start
+   > ```
+
+And now you also have your own local gitbot! (_yippe_)
+
+
 ## SelfHosting with Docker
+
+##### (certified "it works on my machine" moment) the docker version is somehow not running correctly on my machine :P
 
 1. Clone the repo
    > ```sh
@@ -42,27 +67,3 @@ now onto the real talk
      > ```
 
 and voila! you now have your own friendly local gitbot.
-
-## SelfHosting without docker
-
-Without docker adds some other extra steps, instead of `"3. The Docker Commands"`
-
-1. [Download NodeJS](https://nodejs,org/en/download)
-2. Install pnpm
-   > ```sh
-   > npm i -g pnpm@latest
-   > ```
-3. Go to project Dir. & Install all dependencies
-   > ```
-   > pnpm i -P --frozen-lockfile
-   > ```
-4. Register commands
-   > ```
-   > pnpm register
-   > ```
-5. Finally start the gitbot
-   > ```
-   > pnpm start
-   > ```
-
-And now you also have your own local gitbot! (_yippe_)
