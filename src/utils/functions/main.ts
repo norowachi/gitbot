@@ -221,9 +221,11 @@ export async function embedMaker(res: Response, embeds: APIEmbed[]) {
 		new DiscordRestClient(env.DISCORD_APP_TOKEN!, IntEmitter).req(
 			"PATCH",
 			`/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
-			JSON.stringify({
-				components: [navbtns],
-			})
+			{
+				body: {
+					components: [navbtns],
+				},
+			}
 		);
 	}, 15 * 60 * 1000);
 

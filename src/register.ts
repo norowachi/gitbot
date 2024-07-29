@@ -11,7 +11,7 @@ async function register() {
 	console.log("Started refreshing application (/) commands.");
 	await getInteractionCommands(commands);
 	await rest
-		.req("PUT", Routes.applicationCommands(rest.me.id), commands)
+		.req("PUT", Routes.applicationCommands(rest.me.id), { body: commands })
 		.then((res: any) => {
 			res.errors
 				? console.error(inspect(res.errors, { depth: Infinity }))
