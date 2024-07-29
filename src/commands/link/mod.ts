@@ -51,7 +51,7 @@ export default {
 			});
 
 		// generate a random hash
-		const random = hash("sha256", randomBytes(16));
+		const random = hash("sha256", new Uint8Array(randomBytes(16)));
 		// add user id to the ghlinks list with the random string
 		ghLinks.set(random, userId!);
 

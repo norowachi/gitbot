@@ -108,7 +108,8 @@ export default async function Get(
 			} comments`,
 			embeds: [embed],
 			components: components,
-			flags: MessageFlags.Ephemeral,
+			//TODO: make optional
+			// flags: MessageFlags.Ephemeral,
 		},
 	});
 }

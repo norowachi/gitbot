@@ -3,6 +3,7 @@ import { encryptToken, env, DiscordRestClient, Errors, ghLinks } from "@utils";
 import { InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
+import axios from "axios";
 
 // setting up a router
 const github = Router();
@@ -34,21 +35,17 @@ github.get("/callback", async (req, res) => {
 
 	// get the access token
 	const result = await (
-		await fetch(
-			`https://github.com/login/oauth/access_token?client_id=${env.GITHUB_CLIENT_ID}&client_secret=${env.GITHUB_CLIENT_SECRET}&code=${code}`,
-			{
-				headers: {
-					Accept: "application/vnd.github+json",
-				},
-				method: "POST",
-			}
-		)
-	)
-		.json()
-		.catch(() => {
+		await axios({
+			url: `https://github.com/login/oauth/access_token?client_id=${env.GITHUB_CLIENT_ID}&client_secret=${env.GITHUB_CLIENT_SECRET}&code=${code}`,
+			headers: {
+				Accept: "application/vnd.github+json",
+			},
+			method: "POST",
+		}).catch(() => {
 			res.send(Errors.Unexpected);
 			return;
-		});
+		})
+	)?.data;
 
 	if (!result) return;
 	// check if the access token is valid

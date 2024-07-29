@@ -55,7 +55,8 @@ export default async function Close(
 				data.comments
 			} comments`,
 			embeds: [CreateIssueEmbed(data)],
-			flags: MessageFlags.Ephemeral,
+			//TODO: make optional
+			// flags: MessageFlags.Ephemeral,
 		},
 	});
 }

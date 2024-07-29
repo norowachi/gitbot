@@ -101,7 +101,8 @@ export default {
 						content: `https://github.com/${options?.get(
 							"owner"
 						)}/${options?.get("repo")}/pulls/${options?.get("pull_number")}`,
-						flags: MessageFlags.Ephemeral,
+						//TODO: make optional
+						// flags: MessageFlags.Ephemeral,
 					},
 				});
 				return;

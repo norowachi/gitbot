@@ -124,7 +124,8 @@ export default async function Create(
 			} comments`,
 			embeds: [embed],
 			components: components,
-			flags: MessageFlags.Ephemeral,
+			//TODO: make optional
+			// flags: MessageFlags.Ephemeral,
 		},
 	});
 }

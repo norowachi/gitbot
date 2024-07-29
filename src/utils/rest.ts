@@ -1,5 +1,6 @@
 import { env } from "./utils.js";
 import { ChangeConsoleColor, DateInISO, sleep } from "@utils";
+import axios, { RawAxiosRequestHeaders, Method, AxiosHeaders } from "axios";
 import { EventEmitter } from "events";
 
 type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -15,66 +16,71 @@ export default class DiscordRestClient {
 		this.emitter = emitter;
 	}
 
-	public async req(
+	async req(
 		method: methods,
 		endpoint: string,
-		body?: any,
-		timeout?: number,
-		header?: { [key: string]: string }
+		data?: {
+			body?: any;
+			headers?:
+				| (RawAxiosRequestHeaders &
+						Partial<
+							{ [Key in Method as Lowercase<Key>]: AxiosHeaders } & {
+								common: AxiosHeaders;
+							}
+						>)
+				| AxiosHeaders;
+		},
+		timeout?: number
 	): Promise<any> {
+		let { body } = data || {};
+		let headers = data?.headers || {};
+
 		if (timeout) await sleep(timeout * 1.01);
 		const url = `${this.baseUrl}${endpoint}`;
 
-		const headers: Record<string, string> = {
-			Authorization: `Bot ${this.token}`,
-			"Content-Type": header
-				? header["Content-Type"] || "application/json"
-				: "application/json",
-		};
+		headers["User-Agent"] = "norowa.dev";
+		headers["Authorization"] = `Bot ${this.token}`;
+		if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
 
-		if (header)
-			Object.entries(header).forEach(([k, v]) => {
-				headers[k] = v;
-			});
-
-		const options: Record<string, any> = {
+		// send the req
+		const result = await axios({
 			method,
+			url,
 			headers,
-			body: body
-				? typeof body !== "string"
-					? JSON.stringify(body)
-					: body
-				: undefined,
-		};
+			data: body,
+		}).catch((_) => {});
 
-		const result = await fetch(url, options);
+		if (!result) return;
+
 		// json
-		const json: any = (await result.json().catch((e) => {})) || {};
+		const json: any = result.data || {};
 		// if hit rate limiy, retry after the time specified
 		if (json.retry_after) {
 			timeout =
-				(parseInt(result.headers.get("Retry-After") || "0") ||
-					json.retry_after) * 1000;
+				(parseInt(result.headers["Retry-After"] || "0") || json.retry_after) *
+				1000;
 			if (this.emitter)
 				this.emitter.emit(
 					"debug-rest",
-					DateInISO() +
-						`${ChangeConsoleColor(
-							"FgRed",
-							"[REST]"
-						)} METHOD: ${method}, TO: ${endpoint}, STATUS: RATELIMITED. RETRYING AFTER ${timeout}ms`
+					DateInISO(),
+					`${ChangeConsoleColor(
+						"FgRed",
+						"[REST]"
+					)} METHOD: ${method}, TO: ${endpoint}, STATUS: RATELIMITED. RETRYING AFTER ${timeout}ms`
 				);
-			return this.req(method, endpoint, body, timeout);
+			return this.req(method, endpoint, data, timeout);
 		}
 
 		if (this.emitter)
 			this.emitter.emit(
 				"debug-rest",
-				DateInISO() +
-					`${ChangeConsoleColor(
-						"FgRed",
-						"[REST]"
-					)} METHOD: ${method}, TO: ${endpoint}, STATUS: ${result.status}`
+				DateInISO(),
+				`${ChangeConsoleColor(
+					"FgRed",
+					"[REST]"
+				)} METHOD: ${method}, TO: ${endpoint}, STATUS: ${
+					result.status || "NO STATUS"
+				}`
 			);
 
 		return json;
@@ -82,7 +88,7 @@ export default class DiscordRestClient {
 
 	public get me() {
 		return {
-			id: env.DISCORD_APP_ID,
+			id: Buffer.from(this.token.split(".")[0], "base64").toString("ascii"),
 		};
 	}
 }

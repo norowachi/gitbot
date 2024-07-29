@@ -16,7 +16,11 @@ export default {
 	type: ApplicationCommandType.ChatInput,
 	contexts: [0, 1, 2],
 	integration_types: [0, 1],
-	options: PullsOptions,
+	options: [{
+		name: "list",
+		description: "List all repositories",
+		type: 1,
+	}],
 	autocomplete: async (res, focused, gh, options) => {
 		const owner = options?.get("owner");
 		const repo = options?.get("repo");
@@ -71,7 +75,8 @@ export default {
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
 						content: `You have ${repositories.data.length} repositories`,
-						flags: MessageFlags.Ephemeral,
+						//TODO: make optional
+						//flags: MessageFlags.Ephemeral,
 					},
 				});
 			}

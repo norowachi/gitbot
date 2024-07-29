@@ -123,7 +123,8 @@ export default {
 						content: `https://github.com/${options?.get(
 							"owner"
 						)}/${options?.get("repo")}/issues/${options?.get("issue_number")}`,
-						flags: MessageFlags.Ephemeral,
+						//TODO: make optional
+						// flags: MessageFlags.Ephemeral,
 					},
 				});
 				return;

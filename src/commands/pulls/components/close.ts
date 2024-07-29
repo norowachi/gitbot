@@ -44,7 +44,8 @@ export default async function Close(
 		data: {
 			content: `## Closed\n\n[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
 			embeds: [CreatePREmbed(data)],
-			flags: MessageFlags.Ephemeral,
+			//TODO: make optional
+			//flags: MessageFlags.Ephemeral,
 		},
 	});
 }

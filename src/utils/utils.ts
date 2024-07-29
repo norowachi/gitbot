@@ -27,7 +27,6 @@ export const env = {
 	MONGO_URI: process.env.MONGO_URI!,
 	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
 	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN!,
-	DISCORD_APP_ID: process.env.DISCORD_APP_ID!,
 	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY!,
 	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID!,
 	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET!,
@@ -122,7 +121,7 @@ export function valueToUint8Array(
 		return new Uint8Array(value);
 	}
 	if (value instanceof Uint8Array) {
-		return value;
+		return new Uint8Array(value);
 	}
 	throw new Error(
 		"Unrecognized value type, must be one of: string, Buffer, ArrayBuffer, Uint8Array"
@@ -258,9 +257,9 @@ export function verifyKeyMiddleware(
 				await onBodyComplete(Buffer.from(JSON.stringify(req.body), "utf-8"));
 			}
 		} else {
-			const chunks: Array<Buffer> = [];
+			const chunks: Array<Uint8Array> = [];
 			req.on("data", (chunk) => {
-				chunks.push(chunk);
+				chunks.push(new Uint8Array(chunk));
 			});
 			req.on("end", async () => {
 				const rawBody = Buffer.concat(chunks);
@@ -278,11 +277,14 @@ export function encryptToken(token: string): string {
 	const iv = randomBytes(16);
 	const cipher = createCipheriv(
 		"aes-256-cbc",
-		Buffer.from(env.ENCRYPTION_KEY),
-		iv
+		new Uint8Array(Buffer.from(env.ENCRYPTION_KEY)),
+		new Uint8Array(iv)
 	);
 	let encrypted = cipher.update(token);
-	encrypted = Buffer.concat([encrypted, cipher.final()]);
+	encrypted = Buffer.concat([
+		new Uint8Array(encrypted),
+		new Uint8Array(cipher.final()),
+	]);
 	return iv.toString("hex") + ":" + encrypted.toString("hex");
 }
 
@@ -293,11 +295,14 @@ export function decryptToken(encryptedToken: string): string {
 	const encryptedText = Buffer.from(textParts.join(":"), "hex");
 	const decipher = createDecipheriv(
 		"aes-256-cbc",
-		Buffer.from(env.ENCRYPTION_KEY),
-		iv
+		new Uint8Array(Buffer.from(env.ENCRYPTION_KEY)),
+		new Uint8Array(iv)
 	);
-	let decrypted = decipher.update(encryptedText);
-	decrypted = Buffer.concat([decrypted, decipher.final()]);
+	let decrypted = decipher.update(new Uint8Array(encryptedText));
+	decrypted = Buffer.concat([
+		new Uint8Array(decrypted),
+		new Uint8Array(decipher.final()),
+	]);
 	return decrypted.toString();
 }
 
@@ -315,7 +320,7 @@ export async function ClearComponents(
 		"PATCH",
 		Routes.webhookMessage(rest.me.id, interaction.token, "@original"),
 		{
-			components: [],
+			body: { components: [] },
 		}
 	);
 }

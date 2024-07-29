@@ -32,7 +32,7 @@ export class CustomIntEmitter extends EventEmitter {
 
 		// Call the original emit method to emit the event
 		const result = super.emit(event, ...args);
-		// check if response not sent then send
+		// check if response had no listeners then send
 		if (!result && response.writable) {
 			response.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
