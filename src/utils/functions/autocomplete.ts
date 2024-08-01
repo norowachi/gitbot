@@ -45,7 +45,7 @@ export async function handlePullNumberAutocomplete(
 	isAuthed: boolean = false,
 	partialNumber?: string
 ) {
-	let pulls: null | number[] = null;
+	let pulls: undefined | number[] = undefined;
 	// get user
 	const user = await getUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
@@ -53,14 +53,19 @@ export async function handlePullNumberAutocomplete(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
 	);
 	if (!repoData)
-		pulls = (await octo.pulls.list({ owner, repo })).data.map((p) => p.number);
+		pulls = (await octo.pulls.list({ owner, repo }).catch((_) => {}))?.data.map(
+			(p) => p.number
+		);
 	else pulls = repoData.pulls;
 
 	// if no partial number, return all the pull numbers
-	if (!partialNumber) return pulls.slice(0, 25);
+	if (!partialNumber) return pulls?.slice(0, 25) || [];
 
 	// filter pulls to get the ones that includes with the partial number
-	return pulls.filter((p) => p.toString().includes(partialNumber)).slice(0, 25);
+	return (
+		pulls?.filter((p) => p.toString().includes(partialNumber)).slice(0, 25) ||
+		[]
+	);
 }
 
 /**
@@ -74,7 +79,7 @@ export async function handleIssueNumberAutocomplete(
 	isAuthed: boolean = false,
 	partialNumber?: string
 ) {
-	let issues: null | number[] = null;
+	let issues: undefined | number[] = undefined;
 	// get user
 	const user = await getUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
@@ -82,18 +87,19 @@ export async function handleIssueNumberAutocomplete(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
 	);
 	if (!repoData)
-		issues = (await octo.issues.listForRepo({ owner, repo })).data.map(
-			(i) => i.number
-		);
+		issues = (
+			await octo.issues.listForRepo({ owner, repo }).catch((_) => {})
+		)?.data.map((i) => i.number);
 	else issues = repoData.issues;
 
 	// if no partial number, return all the issue numbers
 	if (!partialNumber) return issues?.slice(0, 25) || [];
 
 	// filter issues to get the ones that includes with the partial number
-	return issues
-		.filter((i) => i.toString().includes(partialNumber))
-		.slice(0, 25);
+	return (
+		issues?.filter((i) => i.toString().includes(partialNumber)).slice(0, 25) ||
+		[]
+	);
 }
 
 /**
@@ -139,23 +145,23 @@ export async function handleLabelAutocomplete(
 			.filter(
 				(v) => v.value === [...new Set(v.value.split(/,\s*/g))].join(", ")
 			);
-	if (!repoData)
-		return {
-			choices: joinLabels(
-				(await octo.issues.listLabelsForRepo({ owner, repo })).data.map(
-					(l) => ({
-						name: l.name,
-						value: l.name,
-					})
-				)
-			).slice(0, 25),
-		};
 
-	return {
-		choices: joinLabels(
-			repoData.labels.map((l) => ({ name: l, value: l }))
-		).slice(0, 25),
-	};
+	if (!repoData) {
+		const data = (
+			await octo.issues.listLabelsForRepo({ owner, repo }).catch((_) => {})
+		)?.data.map((l) => ({
+			name: l.name,
+			value: l.name,
+		}));
+
+		if (data) return joinLabels(data).slice(0, 25);
+		else return;
+	}
+
+	return joinLabels(repoData.labels.map((l) => ({ name: l, value: l }))).slice(
+		0,
+		25
+	);
 }
 
 /**

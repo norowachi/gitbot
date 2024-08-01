@@ -6,15 +6,12 @@ import {
 	ComponentType,
 	ButtonStyle,
 } from "discord-api-types/v10";
-import {
-	OctoErrMsg,
-	CreateIssueEmbed,
-	DiscordTimestamp,
-} from "@utils";
+import { OctoErrMsg, CreateIssueEmbed, DiscordTimestamp } from "@utils";
+import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Get(
 	res: Response,
-	octo: Octokit,
+	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {
 	/** owner of the repo
@@ -83,8 +80,7 @@ export default async function Get(
 			} comments`,
 			embeds: [embed],
 			components: components,
-			//TODO: make optional
-			// flags: MessageFlags.Ephemeral,
+			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
 		},
 	});
 }

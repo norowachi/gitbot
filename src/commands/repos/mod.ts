@@ -16,11 +16,13 @@ export default {
 	type: ApplicationCommandType.ChatInput,
 	contexts: [0, 1, 2],
 	integration_types: [0, 1],
-	options: [{
-		name: "list",
-		description: "List all repositories",
-		type: 1,
-	}],
+	options: [
+		{
+			name: "list",
+			description: "List all repositories",
+			type: 1,
+		},
+	],
 	autocomplete: async (res, focused, gh, options) => {
 		const owner = options?.get("owner");
 		const repo = options?.get("repo");
@@ -64,7 +66,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, rest, gh, sub, options) => {
+	run: async (res, per_pagerest, gh, sub) => {
 		switch (sub![0]) {
 			// list repositories
 			case "list": {
@@ -75,8 +77,9 @@ export default {
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
 						content: `You have ${repositories.data.length} repositories`,
-						//TODO: make optional
-						//flags: MessageFlags.Ephemeral,
+						flags: gh[0].settings.misc.ephemeral
+							? MessageFlags.Ephemeral
+							: undefined,
 					},
 				});
 			}

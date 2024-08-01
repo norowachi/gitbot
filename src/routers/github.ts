@@ -1,5 +1,5 @@
 import { json, Router } from "express";
-import { encryptToken, env, DiscordRestClient, Errors, ghLinks } from "@utils";
+import { encryptToken, env, DiscordRestClient, Errors, ghLinks, DateInISO } from "@utils";
 import { InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
@@ -94,6 +94,7 @@ github.get("/callback", async (req, res) => {
 //TODO: use the webhook to manage uh stuff?
 github.post("/webhook", json(), (req, res) => {
 	console.log(
+		DateInISO(),
 		"[WEBHOOK]",
 		req.body.issue
 			? "issue"

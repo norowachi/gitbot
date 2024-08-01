@@ -63,14 +63,14 @@ export async function getGHUserRepos(octo: Octokit, login?: string) {
 	// if it doesnt get auth'd user's
 	const response = await (login
 		? octo.repos.listForUser({ username: login })
-		: octo.repos.listForAuthenticatedUser()
+		: octo.repos.listPublic()
 	).catch((_) => {});
 
 	if (!response) return;
 	// loop thru repos to return levelrepo schema
 
 	const UserRepos = await Promise.all(
-		response.data.map(async (d, i) => {
+		response.data.map(async (d) => {
 			// get repo's pulls
 			const pulls = await getPulls(octo, d as any);
 			// get repo's issues
@@ -80,8 +80,8 @@ export async function getGHUserRepos(octo: Octokit, login?: string) {
 			// set LevelRepo obj
 			return {
 				name: d.name,
-				pulls: pulls ? pulls.data.map((p) => p.number) : [],
-				issues: issues ? issues.data.map((i) => i.number) : [],
+				pulls: pulls ? [...new Set(pulls.data.map((p) => p.number))] : [],
+				issues: issues ? [...new Set(issues.data.map((i) => i.number))] : [],
 				labels: labels ? labels.data.map((l) => l.name) : [],
 			} as LevelRepo;
 		})
@@ -92,11 +92,11 @@ export async function getGHUserRepos(octo: Octokit, login?: string) {
 }
 
 // get issues
-const getIssues = async (
+const getIssues = (
 	octo: Octokit,
 	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
 ) =>
-	await octo.issues
+	octo.issues
 		.list({
 			owner: d.owner.login,
 			repo: d.name,
@@ -106,11 +106,11 @@ const getIssues = async (
 		.catch((_) => {});
 
 // get PRs
-const getPulls = async (
+const getPulls = (
 	octo: Octokit,
 	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
 ) =>
-	await octo.pulls
+	octo.pulls
 		.list({
 			owner: d.owner.login,
 			repo: d.name,
@@ -119,11 +119,11 @@ const getPulls = async (
 		})
 		.catch((_) => {});
 // get labels
-const getLabels = async (
+const getLabels = (
 	octo: Octokit,
 	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
 ) =>
-	await octo.issues
+	octo.issues
 		.listLabelsForRepo({
 			owner: d.owner.login,
 			repo: d.name,

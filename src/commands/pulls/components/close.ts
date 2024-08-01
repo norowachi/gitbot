@@ -2,10 +2,11 @@ import { InteractionResponseType, MessageFlags } from "discord-api-types/v10";
 import { Response } from "express";
 import { Octokit } from "@octokit/rest";
 import { CreatePREmbed, OctoErrMsg } from "@utils";
+import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Close(
 	res: Response,
-	octo: Octokit,
+	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {
 	// get basic data from the interaction options
@@ -44,8 +45,7 @@ export default async function Close(
 		data: {
 			content: `## Closed\n\n[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
 			embeds: [CreatePREmbed(data)],
-			//TODO: make optional
-			//flags: MessageFlags.Ephemeral,
+			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
 		},
 	});
 }

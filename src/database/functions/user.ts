@@ -6,6 +6,7 @@ import {
 } from "@database/interfaces/user.js";
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
+import { NullLiteral } from "typescript";
 
 // initialize a user document
 export async function InitUser(
@@ -61,4 +62,23 @@ export async function FindUser({
 // Delete a user document by discord id
 export async function DeleteUser(discordId: string) {
 	return await user.deleteOne({ "discord.id": discordId });
+}
+
+export async function editUserSettings(
+	discordId: string,
+	settings: Partial<DBUser["settings"]>
+) {
+	const user = await FindUser({ discordId });
+	if (!user) return;
+	// key is either "issues" or "misc"
+	Object.entries(settings).forEach(([key, value]) => {
+		// if value is an array and {user.settings} has it, push new values to the existing values
+		if (Array.isArray(value) && Object.hasOwn(user.settings, key))
+			(user.settings as any)[key].push(...value);
+		// else update the misc values
+		else if (key === "misc") Object.assign(user.settings.misc, value);
+	});
+
+	// update the user document
+	await user.save().catch((_) => {});
 }
