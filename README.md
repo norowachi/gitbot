@@ -25,8 +25,9 @@ now onto the real talk
    > ```sh
    > git clone https://github.com/Noro95/gitbot && cd gitbot
    > ```
-2. Create a `.env` file and fill it according to `example.env`
-3. [Download NodeJS](https://nodejs,org/en/download)
+   or whatever method you prefer
+2. [Download NodeJS](https://nodejs,org/en/download)
+3. Create a `.env` file and fill it according to `example.env`
 4. Install pnpm
    > ```sh
    > npm i -g pnpm@latest

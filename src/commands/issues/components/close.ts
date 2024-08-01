@@ -3,7 +3,6 @@ import { Response } from "express";
 import { Octokit } from "@octokit/rest";
 import {
 	CreateIssueEmbed,
-	CreatePREmbed,
 	DiscordTimestamp,
 	OctoErrMsg,
 } from "@utils";

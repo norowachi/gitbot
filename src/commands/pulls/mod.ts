@@ -10,7 +10,6 @@ import {
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
 } from "@utils";
-// import Update from "./components/update.js";
 import Create from "./components/create.js";
 import Get from "./components/get.js";
 import Close from "./components/close.js";
@@ -91,10 +90,9 @@ export default {
 	run: async (res, rest, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, rest, gh[1], options!);
+				await Create(res, gh[1], options!);
 				return;
 			case "update":
-				// await Update(res, gh[1], options!);
 				res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
@@ -107,7 +105,7 @@ export default {
 				});
 				return;
 			case "get":
-				await Get(res, rest, gh[1], options!);
+				await Get(res, gh[1], options!);
 				return;
 			//TODO: Finish this shit
 			// case "merge":
