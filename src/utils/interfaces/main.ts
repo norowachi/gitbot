@@ -48,7 +48,7 @@ export class CustomIntEmitter extends EventEmitter {
 }
 
 /**
- * The data for a command.
+ * The data for a command. (T: Is GH Auth'd?)
  * @param name - The name of the command.
  * @param description - The description of the command.
  * @param run - The function to run when the command is called.

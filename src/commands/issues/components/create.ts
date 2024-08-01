@@ -70,6 +70,10 @@ export default async function Create(
 	// for buttons
 	options.set("issue_number", data.number);
 
+	/**
+	 * TODO: customizers
+	 */
+
 	// create the embed
 	const embed = CreateIssueEmbed(data);
 
