@@ -75,4 +75,13 @@ export interface DBUser {
 		 */
 		access_token: string;
 	};
+	settings: {
+		/**
+		 * issues conditions and settings on repos
+		 */
+		issues: [{ owner: string; repo: string; auto_project: string }];
+		misc: {
+			ephemeral: boolean;
+		};
+	};
 }

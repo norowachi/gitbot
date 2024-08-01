@@ -28,15 +28,14 @@ export default {
 		// switch the focused option
 		switch (focused) {
 			case "owner": {
+				const array = await handleUserAutocomplete(
+					gh[0]!.github.login,
+					options?.get("owner")
+				);
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: (
-							await handleUserAutocomplete(
-								gh[0]!.github.login,
-								options?.get("owner")
-							)
-						).map((user) => ({ name: user, value: user })),
+						choices: array?.map((user) => ({ name: user, value: user })) || [],
 					},
 				});
 			}
@@ -54,10 +53,11 @@ export default {
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array?.map((repo) => ({
-							name: repo,
-							value: repo,
-						})),
+						choices:
+							array?.map((repo) => ({
+								name: repo,
+								value: repo,
+							})) || [],
 					},
 				});
 			}
@@ -76,10 +76,11 @@ export default {
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array?.map((prn) => ({
-							name: prn.toString(),
-							value: prn,
-						})),
+						choices:
+							array?.map((prn) => ({
+								name: prn.toString(),
+								value: prn,
+							})) || [],
 					},
 				});
 			}
@@ -87,10 +88,10 @@ export default {
 				return;
 		}
 	},
-	run: async (res, rest, gh, sub, options) => {
+	run: async (res, _rest, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, gh[1], options!);
+				await Create(res, gh, options!);
 				return;
 			case "update":
 				res.json({
@@ -99,20 +100,21 @@ export default {
 						content: `https://github.com/${options?.get(
 							"owner"
 						)}/${options?.get("repo")}/pulls/${options?.get("pull_number")}`,
-						//TODO: make optional
-						// flags: MessageFlags.Ephemeral,
+						flags: gh[0].settings.misc.ephemeral
+							? MessageFlags.Ephemeral
+							: undefined,
 					},
 				});
 				return;
 			case "get":
-				await Get(res, gh[1], options!);
+				await Get(res, gh, options!);
 				return;
 			//TODO: Finish this shit
 			// case "merge":
-			// 	await Merge(res, rest, gh[1]!, options!);
+			// 	await Merge(res, rest, gh, options!);
 			// 	return;
 			case "close":
-				await Close(res, gh[1], options!);
+				await Close(res, gh, options!);
 				return;
 			default:
 				return res.json({

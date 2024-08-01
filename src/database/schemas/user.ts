@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
+import { DBUserDoc } from "../interfaces/user.js";
 
-const UserData = new Schema({
+const UserData = new Schema<DBUserDoc>({
 	discord: {
 		id: { type: String, unique: true },
 	},
@@ -15,6 +16,13 @@ const UserData = new Schema({
 		following: Number,
 		created_at: String,
 		access_token: String,
+	},
+	settings: {
+		// issues conditions and settings on repos
+		issues: [{ owner: String, repo: String, auto_project: String }],
+		misc: {
+			ephemeral: Boolean,
+		},
 	},
 });
 

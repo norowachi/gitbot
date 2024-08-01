@@ -13,7 +13,7 @@ async function register() {
 	await rest
 		.req("PUT", Routes.applicationCommands(rest.me.id), { body: commands })
 		.then((res: any) => {
-			res.errors
+			res?.errors
 				? console.error(inspect(res.errors, { depth: Infinity }))
 				: console.log(res);
 		});
