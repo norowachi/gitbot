@@ -9,9 +9,9 @@ import {
 	CommandData,
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
-	RequiredOptions
+	RequiredOptions,
 } from "@utils";
-import { editUserSettings } from "@/database/functions/user.js";
+import { editUser } from "@/database/functions/user.js";
 import { Response } from "express";
 import { inspect } from "node:util";
 import { DBUser } from "@database/interfaces/user.js";
@@ -53,6 +53,12 @@ export default {
 					type: ApplicationCommandOptionType.String,
 					required: false,
 					autocomplete: true,
+				},
+				{
+					name: "auto_assignees",
+					description: "Automatically assign the issue to users",
+					type: ApplicationCommandOptionType.String,
+					required: false,
 				},
 			],
 		},
@@ -135,7 +141,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, _rest, [db], sub, options) => {
+	run: async (res, _rest, [], sub, options) => {
 		const interaction = res.req.body as APIInteraction;
 		const userId = interaction.member?.user.id || interaction.user?.id;
 
@@ -153,7 +159,7 @@ export default {
 			case "misc":
 				return Misc(res, userId, options!);
 			case "issues":
-				return Issues(res, userId, options!, db);
+				return Issues(res, userId, options!);
 			default:
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
@@ -185,7 +191,7 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 	let response = "Settings Updated:\n";
 	// edit ephemeral
 	if (typeof ephemeral !== "undefined") {
-		editUserSettings(userId, { misc: { ephemeral: ephemeral } });
+		editUser(userId, { $set: { "settings.misc.ephemeral": ephemeral } });
 		response += `**Ephemeral** is now \`${ephemeral}\`\n`;
 	}
 
@@ -200,7 +206,7 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 }
 
 // issues stuff
-function Issues(res: Response, userId: string, options: Map<string, any>, db: DBUser) {
+function Issues(res: Response, userId: string, options: Map<string, any>) {
 	const owner: string = options.get("owner");
 	const repo: string = options.get("repo");
 	const auto_project: string | undefined = options.get("auto_project");
@@ -224,21 +230,29 @@ function Issues(res: Response, userId: string, options: Map<string, any>, db: DB
 		if (auto_project === "x") {
 			response += "**Auto Project** id is incorrect.";
 		} else {
-			await editUserSettings(userId, {
-				issues: [{ owner, repo, auto_project: auto_project  }],
-			});
 			response += `**Auto Project** is now linked to project id \`${auto_project}\`\n`;
 		}
-	} else let nonauto_project = db.settings.issues.find(
-		(i) => i.owner.toLowerCase() === owner.toLowerCase() && i.repo.toLowerCase() === repo.toLowerCase()
-	)?.auto_project || undefined;
+	}
 
 	// edit auto_assignees
 	if (auto_assignees) {
-		response += `**Auto Assignees** is set to \`${auto_assignees.split(",").map(as=>`[\`${as.trim()}\`](https://github.com/${as.trim()})`).join(", ")}\`\n`;
-	} else let nonauto_assignees = db.settings.issues.find(
-		(i) => i.owner.toLowerCase() === owner.toLowerCase() && i.repo.toLowerCase() === repo.toLowerCase()
-	)?.auto_assignees || undefined;
+		response += `**Auto Assignees** is set to \`${auto_assignees
+			.split(",")
+			.map((as) => `[\`${as.trim()}\`](https://github.com/${as.trim()})`)
+			.join(", ")}\`\n`;
+	}
+
+	// now edit & save settings
+	editUser(
+		userId,
+		{
+			$set: {
+				"settings.issues.$[issue].auto_project": auto_project,
+				"settings.issues.$[issue].auto_assignees": auto_assignees,
+			},
+		},
+		{ arrayFilters: [{ owner: owner, repo: repo }], new: true }
+	);
 
 	// lastly return response/ack
 	return res.json({

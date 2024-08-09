@@ -7,7 +7,12 @@ import {
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
 import { NullLiteral } from "typescript";
-import { UpdateQuery } from "mongoose";
+import {
+	QueryOptions,
+	UpdateAggregationStage,
+	UpdateQuery,
+	UpdateWithAggregationPipeline,
+} from "mongoose";
 
 // initialize a user document
 export async function InitUser(
@@ -65,12 +70,13 @@ export async function DeleteUser(discordId: string) {
 	return await user.deleteOne({ "discord.id": discordId });
 }
 
-export async function editUserSettings(
+export async function editUser(
 	discordId: string,
-	settings: UpdateQuery<DBUserDoc["settings"]>
+	data: UpdateQuery<DBUserDoc> | UpdateWithAggregationPipeline,
+	options?: QueryOptions
 ) {
 	const user = await FindUser({ discordId });
 	if (!user) return;
-	await user.updateOne({settings: settings}).catch(e=>console.error(e));
+	await user.updateOne(data, options).catch((e) => console.error(e));
 	return;
 }
