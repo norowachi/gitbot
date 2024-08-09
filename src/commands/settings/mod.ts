@@ -119,8 +119,14 @@ export default {
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
 						choices: (projects as any)?.organization.projectsV2.nodes?.map(
-							(n: any) => ({ name: n.title, value: n.id })
-						) || [{ name: "No Projects Found", value: "No Projects Found" }],
+							(n: any) =>
+								n
+									? { name: n.title, value: n.id }
+									: {
+											name: "Projects not accessible by integration",
+											value: "x",
+									  }
+						) || [{ name: "No Projects Found", value: "x" }],
 					},
 				});
 			}
@@ -147,6 +153,16 @@ export default {
 				return Misc(res, userId, options!);
 			case "issues":
 				return Issues(res, userId, options!);
+			default:
+				return res.json({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content: `An error occured while managing settings: ${inspect(
+							sub
+						)}`,
+						flags: MessageFlags.Ephemeral,
+					},
+				});
 		}
 	},
 } as CommandData<true>;
@@ -169,7 +185,7 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 	// edit ephemeral
 	if (typeof ephemeral !== "undefined") {
 		editUserSettings(userId, { misc: { ephemeral: ephemeral } });
-		response += `Ephemeral: ${ephemeral}\n`;
+		response += `**Ephemeral** is now \`${ephemeral}\`\n`;
 	}
 
 	// lastly return response/ack
@@ -203,10 +219,14 @@ function Issues(res: Response, userId: string, options: Map<string, any>) {
 
 	// edit auto_project
 	if (auto_project) {
-		editUserSettings(userId, {
-			issues: [{ owner, repo, auto_project: auto_project }],
-		});
-		response += `Auto Project: ${auto_project}\n`;
+		if (auto_project === "x") {
+			response += "**Auto Project** id is incorrect.";
+		} else {
+			editUserSettings(userId, {
+				issues: [{ owner, repo, auto_project: auto_project }],
+			});
+			response += `**Auto Project** is now linked to project id \`${auto_project}\`\n`;
+		}
 	}
 
 	// lastly return response/ack

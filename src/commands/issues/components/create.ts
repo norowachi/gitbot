@@ -86,7 +86,7 @@ export default async function Create(
 			.graphql(
 				`mutation AddIssueToProject($projectId: ID!, $issueId: ID!) {
 					addProjectV2ItemById(input: {
-						contentId: $contentId
+						contentId: $issueId
 						projectId: $projectId
 					}) {
 						item {
@@ -96,14 +96,16 @@ export default async function Create(
 				}`,
 				{
 					projectId: customizers.auto_project,
-					contentId: data.node_id,
+					issueId: data.node_id,
 				}
 			)
 			.catch((e) => {
+				console.error(e);
 				res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
-						content: OctoErrMsg(e),
+						content:
+							"there was an unexpected error when adding issue to project",
 						flags: MessageFlags.Ephemeral,
 					},
 				});
