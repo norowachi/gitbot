@@ -6,14 +6,12 @@ import {
 	ComponentType,
 	ButtonStyle,
 } from "discord-api-types/v10";
-import {
-	CreatePREmbed,
-	OctoErrMsg,
-} from "@utils";
+import { CreatePREmbed, OctoErrMsg } from "@utils";
+import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Create(
 	res: Response,
-	octo: Octokit,
+	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {
 	/** owner of the repo
@@ -119,8 +117,7 @@ export default async function Create(
 			content: `[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
 			embeds: [embed],
 			components: components,
-			//TODO: make optional
-			//flags: MessageFlags.Ephemeral,
+			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
 		},
 	});
 }

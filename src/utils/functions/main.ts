@@ -134,8 +134,8 @@ export function sleep(ms: number) {
  */
 export function DateInISO(shard_id: number | null = null) {
 	return (
-		ChangeConsoleColor("FgCyan", "[" + new Date().toISOString() + "] ") +
-		(shard_id !== null ? ChangeConsoleColor("FgMagenta", `[${shard_id}] `) : "")
+		ChangeConsoleColor("FgCyan", "[" + new Date().toISOString() + "]") +
+		(shard_id !== null ? ChangeConsoleColor("FgMagenta", ` [${shard_id}]`) : "")
 	);
 }
 

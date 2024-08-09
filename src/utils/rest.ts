@@ -1,7 +1,13 @@
 import { env } from "./utils.js";
 import { ChangeConsoleColor, DateInISO, sleep } from "@utils";
-import axios, { RawAxiosRequestHeaders, Method, AxiosHeaders } from "axios";
-import { EventEmitter } from "events";
+import axios, {
+	RawAxiosRequestHeaders,
+	Method,
+	AxiosHeaders,
+	AxiosError,
+} from "axios";
+import { EventEmitter } from "node:events";
+import { inspect } from "node:util";
 
 type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -48,7 +54,9 @@ export default class DiscordRestClient {
 			url,
 			headers,
 			data: body,
-		}).catch((_) => {});
+		}).catch((e: AxiosError) => {
+			console.error(inspect(e.response?.data, { depth: Infinity }));
+		});
 
 		if (!result) return;
 

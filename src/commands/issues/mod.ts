@@ -22,22 +22,21 @@ export default {
 	contexts: [0, 1, 2],
 	integration_types: [0, 1],
 	options: IssueOptions,
-	autocomplete: async (res, focused, gh, options) => {
+	autocomplete: async (res, focused, [db, octo], options) => {
 		const owner = options?.get("owner");
 		const repo = options?.get("repo");
 		const issue_number = options?.get("issue_number");
 		// switch the focused option
 		switch (focused) {
 			case "owner": {
+				const array = await handleUserAutocomplete(
+					db.github.login,
+					options?.get("owner")
+				);
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: (
-							await handleUserAutocomplete(
-								gh[0]!.github.login,
-								options?.get("owner")
-							)
-						).map((user) => ({ name: user, value: user })),
+						choices: array.map((user) => ({ name: user, value: user })) || [],
 					},
 				});
 			}
@@ -46,19 +45,20 @@ export default {
 				if (!owner) return;
 				// get repos filtered
 				const array = await handleRepoAutocomplete(
-					gh[1],
+					octo,
 					owner,
-					gh[0]!.github.login === owner,
+					db.github.login === owner,
 					repo
 				);
 				// return the autocomplete array
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array?.map((repo) => ({
-							name: repo,
-							value: repo,
-						})),
+						choices:
+							array?.map((repo) => ({
+								name: repo,
+								value: repo,
+							})) || [],
 					},
 				});
 			}
@@ -68,20 +68,21 @@ export default {
 
 				// get issue numbers filtered
 				const array = await handleIssueNumberAutocomplete(
-					gh[1],
+					octo,
 					owner,
 					repo,
-					gh[0]!.github.login === owner,
+					db.github.login === owner,
 					issue_number
 				);
 				// return the autocomplete array
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array?.map((prn) => ({
-							name: prn.toString(),
-							value: prn,
-						})),
+						choices:
+							array?.map((prn) => ({
+								name: prn.toString(),
+								value: prn,
+							})) || [],
 					},
 				});
 			}
@@ -91,17 +92,17 @@ export default {
 
 				// get labels filtered, but this one is already in a ready-to-use array
 				const array = await handleLabelAutocomplete(
-					gh[1],
+					octo,
 					owner,
 					repo,
-					gh[0]!.github.login === owner,
+					db.github.login === owner,
 					options?.get("labels")
 				);
 				// return the autocomplete array
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array?.choices,
+						choices: array || [],
 					},
 				});
 			}
@@ -112,7 +113,7 @@ export default {
 	run: async (res, rest, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, gh[1], options!);
+				await Create(res, rest, gh, options!);
 				return;
 			case "update":
 				res.json({
@@ -121,16 +122,17 @@ export default {
 						content: `https://github.com/${options?.get(
 							"owner"
 						)}/${options?.get("repo")}/issues/${options?.get("issue_number")}`,
-						//TODO: make optional
-						// flags: MessageFlags.Ephemeral,
+						flags: gh[0].settings.misc.ephemeral
+							? MessageFlags.Ephemeral
+							: undefined,
 					},
 				});
 				return;
 			case "get":
-				await Get(res, gh[1], options!);
+				await Get(res, gh, options!);
 				return;
 			case "close":
-				await Close(res, gh[1], options!);
+				await Close(res, gh, options!);
 				return;
 			default:
 				return res.json({

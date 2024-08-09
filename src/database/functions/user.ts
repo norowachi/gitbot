@@ -6,6 +6,8 @@ import {
 } from "@database/interfaces/user.js";
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
+import { NullLiteral } from "typescript";
+import { UpdateQuery } from "mongoose";
 
 // initialize a user document
 export async function InitUser(
@@ -61,4 +63,14 @@ export async function FindUser({
 // Delete a user document by discord id
 export async function DeleteUser(discordId: string) {
 	return await user.deleteOne({ "discord.id": discordId });
+}
+
+export async function editUserSettings(
+	discordId: string,
+	settings: UpdateQuery<DBUserDoc["settings"]>
+) {
+	const user = await FindUser({ discordId });
+	if (!user) return;
+	await user.updateOne({settings: settings}).catch(e=>console.error(e));
+	return;
 }

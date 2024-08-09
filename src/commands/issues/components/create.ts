@@ -10,21 +10,24 @@ import {
 	OctoErrMsg,
 	CreateIssueEmbed,
 	DiscordTimestamp,
+	DiscordRestClient,
 } from "@utils";
+import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Create(
 	res: Response,
-	octo: Octokit,
+	rest: DiscordRestClient,
+	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {
 	/** owner of the repo
 	 * ! REQUIRED
 	 */
-	const owner = options.get("owner");
+	const owner: string = options.get("owner");
 	/** name of the repo
 	 * ! REQUIRED
 	 */
-	const repo = options.get("repo");
+	const repo: string = options.get("repo");
 	/** title of the issue
 	 * ! REQUIRED
 	 */
@@ -70,6 +73,41 @@ export default async function Create(
 	// for buttons
 	options.set("issue_number", data.number);
 
+	// get customizers
+	const customizers = db.settings.issues.find(
+		(i) =>
+			i.owner.toLowerCase() == owner.toLowerCase() &&
+			i.repo.toLowerCase() == repo.toLowerCase()
+	);
+	// for customizer response
+	let customizersRes: string = "";
+	// handle auto_project customizer
+	if (customizers?.auto_project)
+		// add to project v2 with graphql
+		customizersRes += (await octo
+			.graphql(
+				`mutation AddIssueToProject($projectId: ID!, $issueId: ID!) {
+					addProjectV2ItemById(input: {
+						contentId: $issueId
+						projectId: $projectId
+					}) {
+						item {
+							id
+						}
+					}
+				}`,
+				{
+					projectId: customizers.auto_project,
+					issueId: data.node_id,
+				}
+			)
+			.catch((e) => {
+				console.error(e);
+				return;
+			}))
+			? "Added issue to project\n"
+			: "*Error adding issue to project\n";
+
 	// create the embed
 	const embed = CreateIssueEmbed(data);
 
@@ -96,11 +134,10 @@ export default async function Create(
 				data.user?.html_url
 			}) opened this issue ${DiscordTimestamp(data.created_at, "R")} | ${
 				data.comments
-			} comments`,
+			} comments\n${customizersRes}`,
 			embeds: [embed],
 			components: components,
-			//TODO: make optional
-			// flags: MessageFlags.Ephemeral,
+			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
 		},
 	});
 }

@@ -1,15 +1,12 @@
 import { InteractionResponseType, MessageFlags } from "discord-api-types/v10";
 import { Response } from "express";
 import { Octokit } from "@octokit/rest";
-import {
-	CreateIssueEmbed,
-	DiscordTimestamp,
-	OctoErrMsg,
-} from "@utils";
+import { CreateIssueEmbed, DiscordTimestamp, OctoErrMsg } from "@utils";
+import { DBUser } from "@database/interfaces/user.js";
 
 export default async function Close(
 	res: Response,
-	octo: Octokit,
+	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {
 	// get basic data from the interaction options
@@ -54,8 +51,7 @@ export default async function Close(
 				data.comments
 			} comments`,
 			embeds: [CreateIssueEmbed(data)],
-			//TODO: make optional
-			// flags: MessageFlags.Ephemeral,
+			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
 		},
 	});
 }
