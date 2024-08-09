@@ -7,6 +7,7 @@ import {
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
 import { NullLiteral } from "typescript";
+import { UpdateQuery } from "mongoose";
 
 // initialize a user document
 export async function InitUser(
@@ -66,19 +67,10 @@ export async function DeleteUser(discordId: string) {
 
 export async function editUserSettings(
 	discordId: string,
-	settings: Partial<DBUser["settings"]>
+	settings: UpdateQuery<DBUserDoc["settings"]>
 ) {
 	const user = await FindUser({ discordId });
 	if (!user) return;
-	// key is either "issues" or "misc"
-	Object.entries(settings).forEach(([key, value]) => {
-		// if value is an array and {user.settings} has it, push new values to the existing values
-		if (Array.isArray(value) && Object.hasOwn(user.settings, key))
-			(user.settings as any)[key].push(...value);
-		// else update the misc values
-		else if (key === "misc") Object.assign(user.settings.misc, value);
-	});
-
-	// update the user document
-	await user.save().catch((_) => {});
+	await user.updateOne({settings: settings}).catch(e=>console.error(e));
+	return;
 }

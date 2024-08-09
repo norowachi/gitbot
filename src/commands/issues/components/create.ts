@@ -23,11 +23,11 @@ export default async function Create(
 	/** owner of the repo
 	 * ! REQUIRED
 	 */
-	const owner = options.get("owner");
+	const owner: string = options.get("owner");
 	/** name of the repo
 	 * ! REQUIRED
 	 */
-	const repo = options.get("repo");
+	const repo: string = options.get("repo");
 	/** title of the issue
 	 * ! REQUIRED
 	 */
@@ -75,7 +75,9 @@ export default async function Create(
 
 	// get customizers
 	const customizers = db.settings.issues.find(
-		(i) => i.owner == owner && i.repo == repo
+		(i) =>
+			i.owner.toLowerCase() == owner.toLowerCase() &&
+			i.repo.toLowerCase() == repo.toLowerCase()
 	);
 	// for customizer response
 	let customizersRes: string = "";
@@ -101,18 +103,10 @@ export default async function Create(
 			)
 			.catch((e) => {
 				console.error(e);
-				res.json({
-					type: InteractionResponseType.ChannelMessageWithSource,
-					data: {
-						content:
-							"there was an unexpected error when adding issue to project",
-						flags: MessageFlags.Ephemeral,
-					},
-				});
 				return;
 			}))
-			? "And added issue to project\n"
-			: "";
+			? "Added issue to project\n"
+			: "*Error adding issue to project\n";
 
 	// create the embed
 	const embed = CreateIssueEmbed(data);

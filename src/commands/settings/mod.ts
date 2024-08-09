@@ -9,11 +9,12 @@ import {
 	CommandData,
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
-	RequiredOptions,
+	RequiredOptions
 } from "@utils";
 import { editUserSettings } from "@/database/functions/user.js";
 import { Response } from "express";
 import { inspect } from "node:util";
+import { DBUser } from "@database/interfaces/user.js";
 
 export default {
 	name: "settings",
@@ -152,7 +153,7 @@ export default {
 			case "misc":
 				return Misc(res, userId, options!);
 			case "issues":
-				return Issues(res, userId, options!);
+				return Issues(res, userId, options!, db);
 			default:
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
@@ -199,10 +200,11 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 }
 
 // issues stuff
-function Issues(res: Response, userId: string, options: Map<string, any>) {
-	const owner: string = options?.get("owner");
-	const repo: string = options?.get("repo");
-	const auto_project: string | undefined = options?.get("auto_project");
+function Issues(res: Response, userId: string, options: Map<string, any>, db: DBUser) {
+	const owner: string = options.get("owner");
+	const repo: string = options.get("repo");
+	const auto_project: string | undefined = options.get("auto_project");
+	const auto_assignees: string | undefined = options.get("auto_assignees");
 
 	// if no options at all
 	if (options?.size <= 2) {
@@ -222,12 +224,21 @@ function Issues(res: Response, userId: string, options: Map<string, any>) {
 		if (auto_project === "x") {
 			response += "**Auto Project** id is incorrect.";
 		} else {
-			editUserSettings(userId, {
-				issues: [{ owner, repo, auto_project: auto_project }],
+			await editUserSettings(userId, {
+				issues: [{ owner, repo, auto_project: auto_project  }],
 			});
 			response += `**Auto Project** is now linked to project id \`${auto_project}\`\n`;
 		}
-	}
+	} else let nonauto_project = db.settings.issues.find(
+		(i) => i.owner.toLowerCase() === owner.toLowerCase() && i.repo.toLowerCase() === repo.toLowerCase()
+	)?.auto_project || undefined;
+
+	// edit auto_assignees
+	if (auto_assignees) {
+		response += `**Auto Assignees** is set to \`${auto_assignees.split(",").map(as=>`[\`${as.trim()}\`](https://github.com/${as.trim()})`).join(", ")}\`\n`;
+	} else let nonauto_assignees = db.settings.issues.find(
+		(i) => i.owner.toLowerCase() === owner.toLowerCase() && i.repo.toLowerCase() === repo.toLowerCase()
+	)?.auto_assignees || undefined;
 
 	// lastly return response/ack
 	return res.json({

@@ -1,9 +1,17 @@
 import { json, Router } from "express";
-import { encryptToken, env, DiscordRestClient, Errors, ghLinks, DateInISO } from "@utils";
+import {
+	encryptToken,
+	env,
+	DiscordRestClient,
+	Errors,
+	ghLinks,
+	DateInISO,
+} from "@utils";
 import { InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
 import axios from "axios";
+import {appendFileSync}from"node:fs";
 
 // setting up a router
 const github = Router();
@@ -103,6 +111,9 @@ github.post("/webhook", json(), (req, res) => {
 			: "unknown",
 		req.body.action
 	);
+	// log to file
+	appendFileSync("webhook.log", `${req.body}\n\n`);
+
 	res.sendStatus(200);
 });
 
