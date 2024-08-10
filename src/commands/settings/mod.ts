@@ -11,7 +11,7 @@ import {
 	handleUserAutocomplete,
 	RequiredOptions,
 } from "@utils";
-import { editUser } from "@/database/functions/user.js";
+import { editUserSettings } from "@/database/functions/user.js";
 import { Response } from "express";
 import { inspect } from "node:util";
 import { DBUser } from "@database/interfaces/user.js";
@@ -49,14 +49,15 @@ export default {
 				{
 					name: "auto_project",
 					description:
-						"Automatically add the issue to an org's projectV2 (put the project's node_id)",
+						"Automatically add the issue to a projectV2 (put the project's node_id)",
 					type: ApplicationCommandOptionType.String,
 					required: false,
 					autocomplete: true,
 				},
 				{
 					name: "auto_assignees",
-					description: "Automatically assign the issue to users",
+					description:
+						"Automatically assign the issue to users (logins comma separated)",
 					type: ApplicationCommandOptionType.String,
 					required: false,
 				},
@@ -105,35 +106,71 @@ export default {
 			}
 			case "auto_project": {
 				// fetch projects
-				const projects = await gh[1]
-					.graphql(
-						`query($login: String!) {
+				const projects = [
+					await gh[1]
+						.graphql(
+							`query($login: String!) {
 							organization(login: $login)  { 
 								projectsV2(first: 100) { 
 									nodes {
 										id
 										title
 									}
-									totalCount
 								} 
 							} 
 						}`,
-						{ login: owner }
-					)
-					.catch((_) => {});
+							{ login: owner }
+						)
+						.catch((_) => {}),
+					await gh[1]
+						.graphql(
+							`query($login: String!) {
+							user(login: $login)  { 
+								projectsV2(first: 100) { 
+									nodes {
+										id
+										title
+									}
+								} 
+							} 
+						}`,
+							{ login: owner }
+						)
+						.catch((_) => {}),
+				];
 				// return the autocomplete array
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: (projects as any)?.organization.projectsV2.nodes?.map(
-							(n: any) =>
+						choices: [
+							// get org projects
+							(
+								projects as any
+							)[0]?.organization.projectsV2.nodes?.map((n: any) =>
 								n
 									? { name: n.title, value: n.id }
 									: {
 											name: "Projects not accessible by integration",
 											value: "x",
 									  }
-						) || [{ name: "No Projects Found", value: "x" }],
+							) || {
+								name: "No org projects found",
+								value: "x",
+							},
+							// get user projects
+							(projects as any)[1]?.user.projectsV2.nodes?.map(
+								(n: any) =>
+									n
+										? { name: n.title, value: n.id }
+										: {
+												name: "Projects not accessible by integration",
+												value: "x",
+										  }
+							) || {
+								name: "No user projects found",
+								value: "x",
+							},
+						],
 					},
 				});
 			}
@@ -141,7 +178,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, _rest, [], sub, options) => {
+	run: async (res, _rest, [db], sub, options) => {
 		const interaction = res.req.body as APIInteraction;
 		const userId = interaction.member?.user.id || interaction.user?.id;
 
@@ -159,7 +196,7 @@ export default {
 			case "misc":
 				return Misc(res, userId, options!);
 			case "issues":
-				return Issues(res, userId, options!);
+				return Issues(res, userId, options!, db);
 			default:
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
@@ -191,7 +228,9 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 	let response = "Settings Updated:\n";
 	// edit ephemeral
 	if (typeof ephemeral !== "undefined") {
-		editUser(userId, { $set: { "settings.misc.ephemeral": ephemeral } });
+		editUserSettings(userId, {
+			misc: { ephemeral },
+		});
 		response += `**Ephemeral** is now \`${ephemeral}\`\n`;
 	}
 
@@ -206,11 +245,21 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 }
 
 // issues stuff
-function Issues(res: Response, userId: string, options: Map<string, any>) {
+function Issues(
+	res: Response,
+	userId: string,
+	options: Map<string, any>,
+	db: DBUser
+) {
 	const owner: string = options.get("owner");
 	const repo: string = options.get("repo");
 	const auto_project: string | undefined = options.get("auto_project");
 	const auto_assignees: string | undefined = options.get("auto_assignees");
+
+	//get saved customizers if it exists
+	const customizers = db.settings.issues.find(
+		(i) => i.owner === owner && i.repo === repo
+	);
 
 	// if no options at all
 	if (options?.size <= 2) {
@@ -223,12 +272,12 @@ function Issues(res: Response, userId: string, options: Map<string, any>) {
 		});
 	}
 	// build response
-	let response = `Settings Updated For [\`${owner}/${repo}\`](https://github.com/${owner}/${repo}):\n`;
+	let response = `Settings Updated For [\`${owner}/${repo}\`](<https://github.com/${owner}/${repo}>):\n`;
 
 	// edit auto_project
 	if (auto_project) {
 		if (auto_project === "x") {
-			response += "**Auto Project** id is incorrect.";
+			response += "**Auto Project** id is incorrect.\n";
 		} else {
 			response += `**Auto Project** is now linked to project id \`${auto_project}\`\n`;
 		}
@@ -236,23 +285,29 @@ function Issues(res: Response, userId: string, options: Map<string, any>) {
 
 	// edit auto_assignees
 	if (auto_assignees) {
-		response += `**Auto Assignees** is set to \`${auto_assignees
+		response += `**Auto Assignees** is set to ${auto_assignees
 			.split(",")
-			.map((as) => `[\`${as.trim()}\`](https://github.com/${as.trim()})`)
-			.join(", ")}\`\n`;
+			.map(
+				(as) => `[\`${as.trim()}\`](<https://github.com/${as.trim()}>)`
+			)
+			.join(", ")}\n`;
 	}
 
 	// now edit & save settings
-	editUser(
-		userId,
-		{
-			$set: {
-				"settings.issues.$[issue].auto_project": auto_project,
-				"settings.issues.$[issue].auto_assignees": auto_assignees,
+	editUserSettings(userId, {
+		issues: [
+			{
+				owner,
+				repo,
+				auto_project:
+					(auto_project === "x" ? undefined : auto_project) ||
+					customizers?.auto_project,
+				auto_assignees:
+					auto_assignees?.split(",").map((as) => as.trim()) ||
+					customizers?.auto_assignees,
 			},
-		},
-		{ arrayFilters: [{ owner: owner, repo: repo }], new: true }
-	);
+		],
+	});
 
 	// lastly return response/ack
 	return res.json({

@@ -79,7 +79,14 @@ export interface DBUser {
 		/**
 		 * issues conditions and settings on repos
 		 */
-		issues: [{ owner: string; repo: string; auto_project: string, auto_assignees: string[] }];
+		issues: [
+			{
+				owner: string;
+				repo: string;
+				auto_project?: string;
+				auto_assignees?: string[];
+			}
+		];
 		misc: {
 			ephemeral: boolean;
 		};

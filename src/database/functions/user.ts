@@ -70,13 +70,28 @@ export async function DeleteUser(discordId: string) {
 	return await user.deleteOne({ "discord.id": discordId });
 }
 
-export async function editUser(
+export async function editUserSettings(
 	discordId: string,
-	data: UpdateQuery<DBUserDoc> | UpdateWithAggregationPipeline,
-	options?: QueryOptions
+	settings: Partial<DBUser["settings"]>
 ) {
 	const user = await FindUser({ discordId });
 	if (!user) return;
-	await user.updateOne(data, options).catch((e) => console.error(e));
-	return;
+	// key is either "issues" or "misc"
+	Object.entries(settings).forEach(([key, values]) => {
+		// if value is an array and {user.settings} has it, push new values to the existing values
+		if (key === "issues" && Array.isArray(values)) {
+			values.map((value) => {
+				const old = user.settings[key].find(
+					(i) => i.owner === value.owner && i.repo === value.repo
+				);
+				if (old) Object.assign(old, value);
+				else user.settings[key].push(value);
+			});
+		}
+		// else update the misc values
+		else if (key === "misc") Object.assign(user.settings.misc, values);
+	});
+
+	// update the user document
+	await user.save().catch((_) => {});
 }
