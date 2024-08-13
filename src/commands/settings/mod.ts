@@ -14,6 +14,7 @@ import {
 import { editUserSettings } from "@/database/functions/user.js";
 import { Response } from "express";
 import { inspect } from "node:util";
+import { DBUser } from "@database/interfaces/user.js";
 
 export default {
 	name: "settings",
@@ -48,10 +49,17 @@ export default {
 				{
 					name: "auto_project",
 					description:
-						"Automatically add the issue to an org's projectV2 (put the project's node_id)",
+						"Automatically add the issue to a projectV2 (put the project's node_id)",
 					type: ApplicationCommandOptionType.String,
 					required: false,
 					autocomplete: true,
+				},
+				{
+					name: "auto_assignees",
+					description:
+						"Automatically assign the issue to users (logins comma separated)",
+					type: ApplicationCommandOptionType.String,
+					required: false,
 				},
 			],
 		},
@@ -98,29 +106,71 @@ export default {
 			}
 			case "auto_project": {
 				// fetch projects
-				const projects = await gh[1]
-					.graphql(
-						`query($login: String!) {
+				const projects = [
+					await gh[1]
+						.graphql(
+							`query($login: String!) {
 							organization(login: $login)  { 
 								projectsV2(first: 100) { 
 									nodes {
 										id
 										title
 									}
-									totalCount
 								} 
 							} 
 						}`,
-						{ login: owner }
-					)
-					.catch((_) => {});
+							{ login: owner }
+						)
+						.catch((_) => {}),
+					await gh[1]
+						.graphql(
+							`query($login: String!) {
+							user(login: $login)  { 
+								projectsV2(first: 100) { 
+									nodes {
+										id
+										title
+									}
+								} 
+							} 
+						}`,
+							{ login: owner }
+						)
+						.catch((_) => {}),
+				];
 				// return the autocomplete array
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: (projects as any)?.organization.projectsV2.nodes?.map(
-							(n: any) => ({ name: n.title, value: n.id })
-						) || [{ name: "No Projects Found", value: "No Projects Found" }],
+						choices: [
+							// get org projects
+							(
+								projects as any
+							)[0]?.organization.projectsV2.nodes?.map((n: any) =>
+								n
+									? { name: n.title, value: n.id }
+									: {
+											name: "Projects not accessible by integration",
+											value: "x",
+									  }
+							) || {
+								name: "No org projects found",
+								value: "x",
+							},
+							// get user projects
+							(projects as any)[1]?.user.projectsV2.nodes?.map(
+								(n: any) =>
+									n
+										? { name: n.title, value: n.id }
+										: {
+												name: "Projects not accessible by integration",
+												value: "x",
+										  }
+							) || {
+								name: "No user projects found",
+								value: "x",
+							},
+						],
 					},
 				});
 			}
@@ -146,7 +196,17 @@ export default {
 			case "misc":
 				return Misc(res, userId, options!);
 			case "issues":
-				return Issues(res, userId, options!);
+				return Issues(res, userId, options!, db);
+			default:
+				return res.json({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content: `An error occured while managing settings: ${inspect(
+							sub
+						)}`,
+						flags: MessageFlags.Ephemeral,
+					},
+				});
 		}
 	},
 } as CommandData<true>;
@@ -168,8 +228,10 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 	let response = "Settings Updated:\n";
 	// edit ephemeral
 	if (typeof ephemeral !== "undefined") {
-		editUserSettings(userId, { misc: { ephemeral: ephemeral } });
-		response += `Ephemeral: ${ephemeral}\n`;
+		editUserSettings(userId, {
+			misc: { ephemeral },
+		});
+		response += `**Ephemeral** is now \`${ephemeral}\`\n`;
 	}
 
 	// lastly return response/ack
@@ -183,10 +245,21 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 }
 
 // issues stuff
-function Issues(res: Response, userId: string, options: Map<string, any>) {
-	const owner: string = options?.get("owner");
-	const repo: string = options?.get("repo");
-	const auto_project: string | undefined = options?.get("auto_project");
+function Issues(
+	res: Response,
+	userId: string,
+	options: Map<string, any>,
+	db: DBUser
+) {
+	const owner: string = options.get("owner");
+	const repo: string = options.get("repo");
+	const auto_project: string | undefined = options.get("auto_project");
+	const auto_assignees: string | undefined = options.get("auto_assignees");
+
+	//get saved customizers if it exists
+	const customizers = db.settings.issues.find(
+		(i) => i.owner === owner && i.repo === repo
+	);
 
 	// if no options at all
 	if (options?.size <= 2) {
@@ -199,15 +272,42 @@ function Issues(res: Response, userId: string, options: Map<string, any>) {
 		});
 	}
 	// build response
-	let response = `Settings Updated For [\`${owner}/${repo}\`](https://github.com/${owner}/${repo}):\n`;
+	let response = `Settings Updated For [\`${owner}/${repo}\`](<https://github.com/${owner}/${repo}>):\n`;
 
 	// edit auto_project
 	if (auto_project) {
-		editUserSettings(userId, {
-			issues: [{ owner, repo, auto_project: auto_project }],
-		});
-		response += `Auto Project: ${auto_project}\n`;
+		if (auto_project === "x") {
+			response += "**Auto Project** id is incorrect.\n";
+		} else {
+			response += `**Auto Project** is now linked to project id \`${auto_project}\`\n`;
+		}
 	}
+
+	// edit auto_assignees
+	if (auto_assignees) {
+		response += `**Auto Assignees** is set to ${auto_assignees
+			.split(",")
+			.map(
+				(as) => `[\`${as.trim()}\`](<https://github.com/${as.trim()}>)`
+			)
+			.join(", ")}\n`;
+	}
+
+	// now edit & save settings
+	editUserSettings(userId, {
+		issues: [
+			{
+				owner,
+				repo,
+				auto_project:
+					(auto_project === "x" ? undefined : auto_project) ||
+					customizers?.auto_project,
+				auto_assignees:
+					auto_assignees?.split(",").map((as) => as.trim()) ||
+					customizers?.auto_assignees,
+			},
+		],
+	});
 
 	// lastly return response/ack
 	return res.json({

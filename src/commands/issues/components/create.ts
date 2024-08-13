@@ -23,11 +23,11 @@ export default async function Create(
 	/** owner of the repo
 	 * ! REQUIRED
 	 */
-	const owner = options.get("owner");
+	const owner: string = options.get("owner");
 	/** name of the repo
 	 * ! REQUIRED
 	 */
-	const repo = options.get("repo");
+	const repo: string = options.get("repo");
 	/** title of the issue
 	 * ! REQUIRED
 	 */
@@ -41,6 +41,13 @@ export default async function Create(
 	/** labels */
 	const labels = options.get("labels");
 
+	// get customizers
+	const customizers = db.settings.issues.find(
+		(i) =>
+			i.owner.toLowerCase() == owner.toLowerCase() &&
+			i.repo.toLowerCase() == repo.toLowerCase()
+	);
+
 	// create req
 	const req = await octo.issues
 		.create({
@@ -48,7 +55,13 @@ export default async function Create(
 			repo,
 			title,
 			body,
-			assignees: assignees?.split(",").map((a: string) => a.trim()),
+			assignees: [
+				...new Set([
+					...(customizers?.auto_assignees || []),
+					...(assignees?.split(",").map((a: string) => a.trim()) ||
+						[]),
+				]),
+			],
 			milestone,
 			labels: labels?.split(",").map((l: string) => l.trim()),
 		})
@@ -73,10 +86,6 @@ export default async function Create(
 	// for buttons
 	options.set("issue_number", data.number);
 
-	// get customizers
-	const customizers = db.settings.issues.find(
-		(i) => i.owner == owner && i.repo == repo
-	);
 	// for customizer response
 	let customizersRes: string = "";
 	// handle auto_project customizer
@@ -86,7 +95,7 @@ export default async function Create(
 			.graphql(
 				`mutation AddIssueToProject($projectId: ID!, $issueId: ID!) {
 					addProjectV2ItemById(input: {
-						contentId: $contentId
+						contentId: $issueId
 						projectId: $projectId
 					}) {
 						item {
@@ -96,21 +105,15 @@ export default async function Create(
 				}`,
 				{
 					projectId: customizers.auto_project,
-					contentId: data.node_id,
+					issueId: data.node_id,
 				}
 			)
 			.catch((e) => {
-				res.json({
-					type: InteractionResponseType.ChannelMessageWithSource,
-					data: {
-						content: OctoErrMsg(e),
-						flags: MessageFlags.Ephemeral,
-					},
-				});
+				console.error(e);
 				return;
 			}))
-			? "And added issue to project\n"
-			: "";
+			? "Added issue to project\n"
+			: "*Error adding issue to project\n";
 
 	// create the embed
 	const embed = CreateIssueEmbed(data);
@@ -141,7 +144,9 @@ export default async function Create(
 			} comments\n${customizersRes}`,
 			embeds: [embed],
 			components: components,
-			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
+			flags: db.settings.misc.ephemeral
+				? MessageFlags.Ephemeral
+				: undefined,
 		},
 	});
 }

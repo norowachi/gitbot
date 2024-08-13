@@ -5,11 +5,8 @@ Integration of the discord and github api, so you can create bugs (and memleaks!
 # Already Hosted Version
 
 You can use [Gitbot](https://norowa.dev/gitbot/invite) on discord without having to host it yourself :D
-(p.s. not up for prod yet as the project is still WIP)
 
 ---
-
-now onto the real talk
 
 # Requirements
 

@@ -7,6 +7,12 @@ import {
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
 import { NullLiteral } from "typescript";
+import {
+	QueryOptions,
+	UpdateAggregationStage,
+	UpdateQuery,
+	UpdateWithAggregationPipeline,
+} from "mongoose";
 
 // initialize a user document
 export async function InitUser(
@@ -71,12 +77,19 @@ export async function editUserSettings(
 	const user = await FindUser({ discordId });
 	if (!user) return;
 	// key is either "issues" or "misc"
-	Object.entries(settings).forEach(([key, value]) => {
+	Object.entries(settings).forEach(([key, values]) => {
 		// if value is an array and {user.settings} has it, push new values to the existing values
-		if (Array.isArray(value) && Object.hasOwn(user.settings, key))
-			(user.settings as any)[key].push(...value);
+		if (key === "issues" && Array.isArray(values)) {
+			values.map((value) => {
+				const old = user.settings[key].find(
+					(i) => i.owner === value.owner && i.repo === value.repo
+				);
+				if (old) Object.assign(old, value);
+				else user.settings[key].push(value);
+			});
+		}
 		// else update the misc values
-		else if (key === "misc") Object.assign(user.settings.misc, value);
+		else if (key === "misc") Object.assign(user.settings.misc, values);
 	});
 
 	// update the user document

@@ -19,7 +19,7 @@ const UserData = new Schema<DBUserDoc>({
 	},
 	settings: {
 		// issues conditions and settings on repos
-		issues: [{ owner: String, repo: String, auto_project: String }],
+		issues: [{ owner: String, repo: String, auto_project: String, auto_assignees: [String] }],
 		misc: {
 			ephemeral: Boolean,
 		},
