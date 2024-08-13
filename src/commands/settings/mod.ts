@@ -77,7 +77,7 @@ export default {
 						choices: (
 							await handleUserAutocomplete(
 								gh[0]!.github.login,
-								options?.get("owner")
+								owner
 							)
 						).map((user) => ({ name: user, value: user })),
 					},

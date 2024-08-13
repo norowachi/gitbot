@@ -27,16 +27,16 @@ importers:
         specifier: 4.19.2
         version: 4.19.2
       fuse.js:
-        specifier: ^7.0.0
+        specifier: 7.0.0
         version: 7.0.0
       level:
-        specifier: ^8.0.1
+        specifier: 8.0.1
         version: 8.0.1
       mongoose:
         specifier: 8.4.1
         version: 8.4.1(socks@2.8.3)
       tsc-alias:
-        specifier: ^1.8.10
+        specifier: 1.8.10
         version: 1.8.10
       typescript:
         specifier: 5.4.5

@@ -31,12 +31,16 @@ export default {
 			case "owner": {
 				const array = await handleUserAutocomplete(
 					db.github.login,
-					options?.get("owner")
+					owner
 				);
 				return res.json({
 					type: InteractionResponseType.ApplicationCommandAutocompleteResult,
 					data: {
-						choices: array.map((user) => ({ name: user, value: user })) || [],
+						choices:
+							array.map((user) => ({
+								name: user,
+								value: user,
+							})) || [],
 					},
 				});
 			}
@@ -121,7 +125,9 @@ export default {
 					data: {
 						content: `https://github.com/${options?.get(
 							"owner"
-						)}/${options?.get("repo")}/issues/${options?.get("issue_number")}`,
+						)}/${options?.get("repo")}/issues/${options?.get(
+							"issue_number"
+						)}`,
 						flags: gh[0].settings.misc.ephemeral
 							? MessageFlags.Ephemeral
 							: undefined,

@@ -73,7 +73,9 @@ app.post(
 		);
 
 		// if its an autocomplete interaction
-		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+		if (
+			interaction.type === InteractionType.ApplicationCommandAutocomplete
+		) {
 			// get DBUser
 			const DBUser = await FindUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
@@ -126,7 +128,8 @@ app.post(
 
 		// if its an application command
 		if (interaction.type === InteractionType.ApplicationCommand) {
-			interaction = interaction as APIChatInputApplicationCommandInteraction;
+			interaction =
+				interaction as APIChatInputApplicationCommandInteraction;
 
 			// get DBUser
 			const DBUser = await FindUser({

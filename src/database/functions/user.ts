@@ -6,13 +6,6 @@ import {
 } from "@database/interfaces/user.js";
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
-import { NullLiteral } from "typescript";
-import {
-	QueryOptions,
-	UpdateAggregationStage,
-	UpdateQuery,
-	UpdateWithAggregationPipeline,
-} from "mongoose";
 
 // initialize a user document
 export async function InitUser(
