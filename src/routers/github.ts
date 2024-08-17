@@ -86,9 +86,7 @@ async function verifyUser(code: string, discordId: string) {
 				Accept: "application/vnd.github+json",
 			},
 			method: "POST",
-		}).catch(() => {
-			return;
-		})
+		}).catch(() => {})
 	)?.data;
 
 	if (!result) return Errors.Unexpected;
