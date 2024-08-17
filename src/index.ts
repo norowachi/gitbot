@@ -13,7 +13,6 @@ import {
 	runCommand,
 	runCommandAutoComplete,
 	getFocusedField,
-	DiscordRestClient,
 } from "@utils";
 import {
 	InteractionResponseType,
@@ -32,9 +31,6 @@ import { Octokit } from "@octokit/rest";
 import github from "@/routers/github.js";
 
 const app: Application = express();
-
-// rest
-const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
 
 // cache the commands
 cacheCommands(commandsData);
@@ -115,7 +111,7 @@ app.post(
 			interaction.type === InteractionType.MessageComponent ||
 			interaction.type === InteractionType.ModalSubmit
 		) {
-			IntEmitter.emit(interaction.data.custom_id, [res, interaction]);
+			IntEmitter.emit(interaction.data.custom_id, res, interaction);
 			return;
 		}
 
@@ -164,7 +160,6 @@ app.post(
 				await runCommand(interaction.data.name!)
 			)(
 				res,
-				rest,
 				octokit ? [DBUser!, octokit] : [],
 				getSub(interaction.data?.options?.at(0)),
 				interaction.data?.options

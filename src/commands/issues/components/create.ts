@@ -6,11 +6,7 @@ import {
 	ComponentType,
 	ButtonStyle,
 } from "discord-api-types/v10";
-import {
-	OctoErrMsg,
-	CreateIssueEmbed,
-	DiscordTimestamp,
-} from "@utils";
+import { OctoErrMsg, CreateIssueEmbed, DiscordTimestamp } from "@utils";
 import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Create(
@@ -106,10 +102,7 @@ export default async function Create(
 					issueId: data.node_id,
 				}
 			)
-			.catch((e) => {
-				console.error(e);
-				return;
-			}))
+			.catch(() => {}))
 			? "Added issue to project\n"
 			: "*Error adding issue to project\n";
 

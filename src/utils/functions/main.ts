@@ -19,9 +19,8 @@ import {
 	emojis,
 	IntEmitter,
 	commandsData,
-	env,
-	DiscordRestClient,
 	LevelRepo,
+	rest,
 } from "@utils";
 import { Endpoints } from "@octokit/types";
 import { Octokit } from "@octokit/rest";
@@ -222,9 +221,9 @@ export async function embedMaker(res: Response, embeds: APIEmbed[]) {
 		IntEmitter.off(next, InteractionCreateEventListener);
 		navbtns.components![0].disabled = true;
 		navbtns.components![1].disabled = true;
-		new DiscordRestClient(env.DISCORD_APP_TOKEN!, IntEmitter).req(
+		rest.req(
 			"PATCH",
-			`/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+			`/webhooks/${rest.me.id}/${interaction.token}/messages/@original`,
 			{
 				body: {
 					components: [navbtns],

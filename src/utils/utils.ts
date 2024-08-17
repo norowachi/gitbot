@@ -45,6 +45,11 @@ if (missing) {
 }
 
 /**
+ * rest client for the discord api
+ */
+export const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
+
+/**
  * Interaction Commands data
  */
 export const commandsData: Map<string, CommandData> = new Map();
@@ -322,7 +327,6 @@ export function decryptToken(encryptedToken: string): string {
  * @returns {Promise<RESTPatchAPIInteractionOriginalResponseJSONBody>}
  */
 export async function ClearComponents(
-	rest: DiscordRestClient,
 	interaction: APIInteraction
 ): Promise<RESTPatchAPIInteractionOriginalResponseJSONBody> {
 	return await rest.req(

@@ -1,12 +1,5 @@
 import { json, Router } from "express";
-import {
-	encryptToken,
-	env,
-	DiscordRestClient,
-	Errors,
-	ghLinks,
-	DateInISO,
-} from "@utils";
+import { encryptToken, env, rest, Errors, ghLinks, DateInISO } from "@utils";
 import { DeleteUser, InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
@@ -17,21 +10,18 @@ import { inspect } from "node:util";
 // setting up a router
 const github = Router();
 
-// setting up a rest client for the verifications
-const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
-
 // first route users gets sent to for redirection
-github.get("/verify/oauth", (req, res) => {
-	const state = req.query.state;
-	if (!state || !ghLinks.has(state)) return res.sendStatus(400);
+github.get("/verify/:random", (req, res) => {
+	const random = req.params.random;
+	if (!random || !ghLinks.has(random)) return res.sendStatus(400);
 
 	return res.redirect(
-		`https://github.com/apps/${env.GITHUB_CLIENT_NAME}/installations/new?state=${state}`
+		`https://github.com/apps/${env.GITHUB_CLIENT_NAME}/installations/new?state=${random}`
 	);
 });
 
 // oauth & getting access token here
-github.get("/callback/oauth", async (req, res) => {
+github.get("/callback", async (req, res) => {
 	const state = req.query.state as string;
 	// check if the state is valid
 	if (!state || !ghLinks.has(state)) return res.sendStatus(400);
@@ -44,8 +34,8 @@ github.get("/callback/oauth", async (req, res) => {
 	if (typeof result === "number") return res.sendStatus(result);
 	else if (typeof result === "string") return res.send(result);
 
-	// verify installation
-	return res.redirect(`/github/verify/install?state=${state}`);
+	// redirect to the guide page with success message
+	return res.redirect(`https://norowa.dev/gitbot/guide?success`);
 });
 
 // the webhooks route

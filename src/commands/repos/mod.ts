@@ -65,7 +65,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, _, gh, sub) => {
+	run: async (res, gh, sub) => {
 		switch (sub![0]) {
 			// list repositories
 			case "list": {

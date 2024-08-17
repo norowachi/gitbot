@@ -74,6 +74,8 @@ export default async function Create(
 		})
 		// catch error
 		.catch((e) => {
+			console.log(e);
+
 			res.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {

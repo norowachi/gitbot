@@ -1,10 +1,9 @@
-import { env, DiscordRestClient } from "@utils";
+import { rest } from "@utils";
 import { APIApplicationCommand, Routes } from "discord-api-types/v10";
 import { inspect } from "node:util";
 import { readdirSync, lstatSync } from "node:fs";
 import { join } from "node:path";
 
-const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
 const commands: Omit<APIApplicationCommand, "application_id" | "id">[] = [];
 
 async function register() {
@@ -43,12 +42,14 @@ export async function getInteractionCommands(
 					join(import.meta.url, "..", dir, file)
 				);
 				commands.push({
-					default_member_permission: Command.default_member_permission,
+					default_member_permission:
+						Command.default_member_permission,
 					type: Command.type,
 					name: Command.name,
 					name_localizations: Command.name_localizations,
 					description: Command.description,
-					description_localizations: Command.description_localizations,
+					description_localizations:
+						Command.description_localizations,
 					dm_permissions: Command.dm_permissions,
 					options: Command.options,
 					contexts: Command.contexts,

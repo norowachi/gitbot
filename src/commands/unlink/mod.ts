@@ -57,7 +57,7 @@ export default {
 		});
 		// handle button click
 		// handle confirmation
-		IntEmitter.on(`confirm-${userId}`, async (...[res]) => {
+		IntEmitter.on(`confirm-${userId}`, async (res) => {
 			// remove user from db
 			await DeleteUser({ discordId: userId });
 			// send confirmation message
@@ -74,7 +74,7 @@ export default {
 			return;
 		});
 		// handle cancel
-		IntEmitter.on(`cancel-${userId}`, (...[res]) => {
+		IntEmitter.on(`cancel-${userId}`, (res) => {
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
 				data: {

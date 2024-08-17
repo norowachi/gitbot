@@ -8,7 +8,6 @@ import type { Response } from "express";
 import { EventEmitter } from "events";
 import { Octokit } from "@octokit/rest";
 import { DBUser } from "@database/interfaces/user.js";
-import { DiscordRestClient } from "@utils";
 
 /**
  * General Repeatitive Errors
@@ -21,9 +20,7 @@ export enum Errors {
  * Custom emitter to handle (custom?) interaction events
  */
 export class CustomIntEmitter extends EventEmitter {
-	emit(event: string | any, args: [Response, APIInteraction]): boolean {
-		const response = args[0] as Response;
-
+	emit(event: string | any, res: Response, int: APIInteraction): boolean {
 		// remove listener after 30mins
 		setTimeout(() => {
 			if (!event) return;
@@ -31,10 +28,10 @@ export class CustomIntEmitter extends EventEmitter {
 		}, 30 * 60 * 1000);
 
 		// Call the original emit method to emit the event
-		const result = super.emit(event, ...args);
+		const result = super.emit(event, res, int);
 		// check if response had no listeners then send
-		if (!result && response.writable) {
-			response.json({
+		if (!result && res.writable) {
+			res.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {
 					content: Errors.Unexpected,
@@ -80,7 +77,6 @@ export interface CommandData<T extends boolean = false>
 	 *
 	 * ~@param interaction Interaction object~
 	 * @param interaction can be accessed thru `res.req.body`
-	 * @param rest {DiscordRestClient} Discord REST client
 	 * @param [user, octokit] Db user object and octokit class passed in commands
 	 * @param sub subcommand group and subcommand if any in [subcommand group, subcommand] or [subcommand] way
 	 * @param options options object filteredas a Record of key option name
@@ -88,7 +84,6 @@ export interface CommandData<T extends boolean = false>
 	 */
 	run: (
 		res: Response,
-		rest: DiscordRestClient,
 		[user, octokit]: T extends true
 			? [DBUser, Octokit]
 			: [DBUser, Octokit] | [],

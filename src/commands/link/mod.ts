@@ -83,7 +83,7 @@ export default {
 				type: ComponentType.Button,
 				style: ButtonStyle.Link,
 				label: "Sign in",
-				url: `${env.SITE_URL}/github/verify/oauth?state=${random}`,
+				url: `${env.SITE_URL}/github/verify/${random}`,
 			});
 		}
 
@@ -142,7 +142,7 @@ async function CreateKeyModal(userId: string, res: any) {
 	});
 
 	// handle the submit button
-	IntEmitter.on(`keysubmit-${userId}`, async (...[res, int]) => {
+	IntEmitter.on(`keysubmit-${userId}`, async (res, int) => {
 		// get the private key
 		const key = int.data.components[0].components[0].value;
 
@@ -197,7 +197,7 @@ async function CreateKeyModal(userId: string, res: any) {
 		});
 
 		// handle the accept buttons
-		IntEmitter.on(`accept-${userId}`, async (...[res]) => {
+		IntEmitter.on(`accept-${userId}`, async (res) => {
 			// add the key to the database
 			// initialize the user
 			const InitUserResult = await InitUser({
@@ -236,7 +236,7 @@ async function CreateKeyModal(userId: string, res: any) {
 		});
 
 		// handle reject
-		IntEmitter.on(`reject-${userId}`, async (...[res]) => {
+		IntEmitter.on(`reject-${userId}`, async (res) => {
 			// send the rejection message
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
