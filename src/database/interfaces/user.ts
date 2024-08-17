@@ -1,5 +1,4 @@
 import { Document } from "mongoose";
-import { UN } from "@utils";
 
 /**
  * Options for the user document
@@ -43,33 +42,9 @@ export interface DBUser {
 		 */
 		login: string;
 		/**
-		 * display name
+		 * account type
 		 */
-		name: UN<string>;
-		/**
-		 * location
-		 */
-		location: UN<string>;
-		/**
-		 * user's bio
-		 */
-		bio: UN<string>;
-		/**
-		 * twitter username
-		 */
-		twitter: UN<string>;
-		/**
-		 * followers count
-		 */
-		followers: number;
-		/**
-		 * following count
-		 */
-		following: number;
-		/**
-		 * account creation date
-		 */
-		created_at: string;
+		type: string;
 		/**
 		 * user's access token
 		 */

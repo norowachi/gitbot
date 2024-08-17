@@ -6,29 +6,22 @@ import {
 } from "@database/interfaces/user.js";
 import { Errors } from "@utils";
 import user from "@database/schemas/user.js";
-import { NullLiteral } from "typescript";
-import {
-	QueryOptions,
-	UpdateAggregationStage,
-	UpdateQuery,
-	UpdateWithAggregationPipeline,
-} from "mongoose";
 
 // initialize a user document
 export async function InitUser(
 	options: DBUserOptions<"init">
-): Promise<UserEnums> {
+): Promise<string | DBUserDoc> {
 	// check if the github account is already linked to a discord account
 	// and return an error string if the github account is already linked to a discord account
-	if ((await FindUser({ githubId: options.github.id }))?.discord.id)
+	if ((await getUser({ githubId: options.github.id }))?.discord.id)
 		return UserEnums.GithubLinked;
 	// check if the discord account is already linked to a github account
 	// and return an error string if the discord account is already linked to a github account
-	if ((await FindUser({ discordId: options.discord.id }))?.github.id)
+	if ((await getUser({ discordId: options.discord.id }))?.github.id)
 		return UserEnums.DiscordLinked;
 
 	// create a new user document
-	await user
+	const DBUser = await user
 		.create({
 			discord: {
 				id: options.discord.id,
@@ -36,24 +29,21 @@ export async function InitUser(
 			github: {
 				id: options.github.id,
 				login: options.github.login,
-				name: options.github.name,
-				location: options.github.location,
-				bio: options.github.bio,
-				twitter: options.github.twitter,
-				followers: options.github.followers,
-				following: options.github.following,
-				created_at: options.github.created_at,
+				type: options.github.type,
 				access_token: options.github.access_token,
 			},
 		} as DBUser)
-		.catch(() => {
-			return Errors.Unexpected;
-		}); // catch any errors
-	return UserEnums.Success;
+		// catch any errors
+		.catch((e) => {
+			console.log(e);
+		});
+
+	if (!DBUser) return Errors.Unexpected;
+	return DBUser;
 }
 
 // get a user document by discord or github id
-export async function FindUser({
+export async function getUser({
 	discordId,
 	githubId,
 }: {
@@ -66,15 +56,23 @@ export async function FindUser({
 }
 
 // Delete a user document by discord id
-export async function DeleteUser(discordId: string) {
-	return await user.deleteOne({ "discord.id": discordId });
+export async function DeleteUser({
+	discordId,
+	githubId,
+}: {
+	discordId?: string;
+	githubId?: string;
+}) {
+	return await user.findOneAndDelete({
+		$or: [{ "discord.id": discordId }, { "github.id": githubId }],
+	});
 }
 
 export async function editUserSettings(
 	discordId: string,
 	settings: Partial<DBUser["settings"]>
 ) {
-	const user = await FindUser({ discordId });
+	const user = await getUser({ discordId });
 	if (!user) return;
 	// key is either "issues" or "misc"
 	Object.entries(settings).forEach(([key, values]) => {
@@ -94,4 +92,5 @@ export async function editUserSettings(
 
 	// update the user document
 	await user.save().catch((_) => {});
+	return;
 }
