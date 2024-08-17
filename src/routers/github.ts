@@ -32,13 +32,9 @@ github.get("/verify/oauth", (req, res) => {
 
 // oauth & getting access token here
 github.get("/callback/oauth", async (req, res) => {
-	console.log(req.url);
-
 	const state = req.query.state as string;
 	// check if the state is valid
 	if (!state || !ghLinks.has(state)) return res.sendStatus(400);
-
-	console.log(res.locals.code);
 
 	// get the code
 	const code = req.query.code as string;

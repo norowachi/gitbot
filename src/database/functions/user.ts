@@ -34,9 +34,7 @@ export async function InitUser(
 			},
 		} as DBUser)
 		// catch any errors
-		.catch((e) => {
-			console.log(e);
-		});
+		.catch(() => {});
 
 	if (!DBUser) return Errors.Unexpected;
 	return DBUser;
