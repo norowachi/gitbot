@@ -59,7 +59,7 @@ export default {
 		// handle confirmation
 		IntEmitter.on(`confirm-${userId}`, async (...[res]) => {
 			// remove user from db
-			await DeleteUser(userId);
+			await DeleteUser({ discordId: userId });
 			// send confirmation message
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
@@ -78,7 +78,8 @@ export default {
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
 				data: {
-					content: "Unlink cancelled.\nEnjoy your remaining time with us 😈",
+					content:
+						"Unlink cancelled.\nEnjoy your remaining time with us 😈",
 					flags: MessageFlags.Ephemeral,
 					components: [],
 				},
@@ -87,5 +88,6 @@ export default {
 			IntEmitter.removeAllListeners(`cancel-${userId}`);
 			return;
 		});
+		return;
 	},
 } as CommandData<true>;

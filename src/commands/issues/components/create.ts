@@ -10,13 +10,11 @@ import {
 	OctoErrMsg,
 	CreateIssueEmbed,
 	DiscordTimestamp,
-	DiscordRestClient,
 } from "@utils";
 import { DBUser } from "@/database/interfaces/user.js";
 
 export default async function Create(
 	res: Response,
-	rest: DiscordRestClient,
 	[db, octo]: [DBUser, Octokit],
 	options: Map<string, any>
 ) {

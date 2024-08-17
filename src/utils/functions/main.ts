@@ -21,8 +21,10 @@ import {
 	commandsData,
 	env,
 	DiscordRestClient,
+	LevelRepo,
 } from "@utils";
 import { Endpoints } from "@octokit/types";
+import { Octokit } from "@octokit/rest";
 
 /**
  * Run a command
@@ -135,7 +137,9 @@ export function sleep(ms: number) {
 export function DateInISO(shard_id: number | null = null) {
 	return (
 		ChangeConsoleColor("FgCyan", "[" + new Date().toISOString() + "]") +
-		(shard_id !== null ? ChangeConsoleColor("FgMagenta", ` [${shard_id}]`) : "")
+		(shard_id !== null
+			? ChangeConsoleColor("FgMagenta", ` [${shard_id}]`)
+			: "")
 	);
 }
 
@@ -235,7 +239,9 @@ export async function embedMaker(res: Response, embeds: APIEmbed[]) {
 	) {
 		interaction.user = interaction.member?.user || interaction.user;
 		// if not author of the interaction, nuh uh
-		if ((args[1].user || args[1].member?.user)?.id !== interaction.user?.id) {
+		if (
+			(args[1].user || args[1].member?.user)?.id !== interaction.user?.id
+		) {
 			args[0].json({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {
@@ -248,7 +254,8 @@ export async function embedMaker(res: Response, embeds: APIEmbed[]) {
 		// defining response, interaction and interaction data
 		const res = args[0];
 		const int = args[1] as unknown as APIMessageComponentInteraction;
-		const intData = int.data as unknown as APIMessageComponentInteractionData;
+		const intData =
+			int.data as unknown as APIMessageComponentInteractionData;
 
 		// if previous button clicked
 		if (intData.custom_id == prev) {
@@ -336,7 +343,9 @@ export function OctoErrMsg(req: any) {
 			? `${(req.response.data as any).message}`
 			: "Operation was not successful") +
 		((req.response?.data as any).errors
-			? `\nStatus: ${(req.response?.data as any).status}, Error(s):\n${errors}`
+			? `\nStatus: ${
+					(req.response?.data as any).status
+			  }, Error(s):\n${errors}`
 			: "")
 	);
 }
@@ -390,9 +399,12 @@ export function CreatePREmbed(
 						? `**Mergeable**: ${data.mergeable}, **Mergable State**: ${data.mergeable_state}\n**Merge Commit SHA**: ${data.merge_commit_sha}`
 						: `**Merged**: ${data.merged}${
 								data.merged
-									? `, at ${DiscordTimestamp(data.merged_at!, "f")}, by [\`${
-											data.merged_by?.login
-									  }\`](${data.merged_by?.html_url})`
+									? `, at ${DiscordTimestamp(
+											data.merged_at!,
+											"f"
+									  )}, by [\`${data.merged_by?.login}\`](${
+											data.merged_by?.html_url
+									  })`
 									: ""
 						  }`,
 					`**State**: ${data.state}, **Locked**: ${data.locked}${
@@ -453,7 +465,12 @@ export function CreateIssueEmbed(
 				value:
 					data.labels?.length > 0
 						? data.labels
-								.map((l) => `\`${typeof l === "string" ? l : l.name}\``)
+								.map(
+									(l) =>
+										`\`${
+											typeof l === "string" ? l : l.name
+										}\``
+								)
 								.join(", ")
 						: "No Labels",
 				inline: true,
@@ -464,7 +481,9 @@ export function CreateIssueEmbed(
 					`**State**: ${data.state}${
 						data.state == "closed"
 							? `, at ${
-									data.closed_at ? DiscordTimestamp(data.closed_at, "f") : "N/A"
+									data.closed_at
+										? DiscordTimestamp(data.closed_at, "f")
+										: "N/A"
 							  }, by ${
 									data.closed_by
 										? `[\`${data.closed_by.login}\`](${data.closed_by.html_url})`
@@ -498,3 +517,88 @@ export function CreateIssueEmbed(
 	// return the embed
 	return embed;
 }
+
+/**
+ * get a User's Repos
+ * @param octo the octokit object
+ * @param login username, if empty will get auth'd users'
+ * @returns
+ */
+export async function getGHUserRepos(octo: Octokit, login?: string) {
+	// get gh data
+	// if login exists get that user's repos and save em
+	// if it doesnt get auth'd user's
+	const response = await (login
+		? octo.repos.listForUser({ username: login })
+		: octo.repos.listPublic()
+	).catch((_) => {});
+
+	if (!response) return;
+	// loop thru repos to return levelrepo schema
+
+	const UserRepos = await Promise.all(
+		response.data.map(async (d) => {
+			// get repo's pulls
+			const pulls = await getPulls(octo, d as any);
+			// get repo's issues
+			const issues = await getIssues(octo, d as any);
+			// get repo's labels
+			const labels = await getLabels(octo, d as any);
+			// set LevelRepo obj
+			return {
+				name: d.name,
+				pulls: pulls
+					? [...new Set(pulls.data.map((p) => p.number))]
+					: [],
+				issues: issues
+					? [...new Set(issues.data.map((i) => i.number))]
+					: [],
+				labels: labels ? labels.data.map((l) => l.name) : [],
+			} as LevelRepo;
+		})
+	);
+
+	// finally return the repos with filtered dubs
+	return UserRepos;
+}
+
+// get issues
+const getIssues = (
+	octo: Octokit,
+	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
+) =>
+	octo.issues
+		.list({
+			owner: d.owner.login,
+			repo: d.name,
+			state: "all",
+			per_page: 50,
+		})
+		.catch((_) => {});
+
+// get PRs
+const getPulls = (
+	octo: Octokit,
+	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
+) =>
+	octo.pulls
+		.list({
+			owner: d.owner.login,
+			repo: d.name,
+			state: "all",
+			per_page: 50,
+		})
+		.catch((_) => {});
+
+// get labels
+const getLabels = (
+	octo: Octokit,
+	d: Endpoints["GET /repos/{owner}/{repo}"]["response"]["data"]
+) =>
+	octo.issues
+		.listLabelsForRepo({
+			owner: d.owner.login,
+			repo: d.name,
+			per_page: 50,
+		})
+		.catch((_) => {});

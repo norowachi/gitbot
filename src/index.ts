@@ -25,7 +25,7 @@ import {
 import fs from "node:fs";
 import path from "node:path";
 import { connect } from "mongoose";
-import { FindUser } from "@database/functions/user.js";
+import { getUser } from "@database/functions/user.js";
 import { Octokit } from "@octokit/rest";
 
 // routers
@@ -73,9 +73,11 @@ app.post(
 		);
 
 		// if its an autocomplete interaction
-		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+		if (
+			interaction.type === InteractionType.ApplicationCommandAutocomplete
+		) {
 			// get DBUser
-			const DBUser = await FindUser({
+			const DBUser = await getUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
 			});
 
@@ -126,10 +128,11 @@ app.post(
 
 		// if its an application command
 		if (interaction.type === InteractionType.ApplicationCommand) {
-			interaction = interaction as APIChatInputApplicationCommandInteraction;
+			interaction =
+				interaction as APIChatInputApplicationCommandInteraction;
 
 			// get DBUser
-			const DBUser = await FindUser({
+			const DBUser = await getUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
 			});
 
