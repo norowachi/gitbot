@@ -13,6 +13,7 @@ import {
 	runCommand,
 	runCommandAutoComplete,
 	getFocusedField,
+ rest
 } from "@utils";
 import {
 	InteractionResponseType,
@@ -20,9 +21,11 @@ import {
 	MessageFlags,
 	APIInteraction,
 	APIChatInputApplicationCommandInteraction,
+ Routes
 } from "discord-api-types/v10";
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { connect } from "mongoose";
 import { getUser } from "@database/functions/user.js";
 import { Octokit } from "@octokit/rest";
