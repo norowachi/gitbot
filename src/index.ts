@@ -35,6 +35,19 @@ const app: Application = express();
 // cache the commands
 cacheCommands(commandsData);
 
+// update bot's "about me"
+rest.req("PATCH", Routes.currentApplication(), {
+        body: {
+                description: `**Version** \`${execSync("git rev-parse HEAD")
+                        .toString()
+                        .slice(0, 7)}\`\n
+Integration of the Discord and GitHub API, so you can submit your bugs (and memleaks!) without stopping your conversation :D
+
+Not affiliated with either Discord nor GitHub.
+Disclaimer; avatar & banner created by https://jasonlong.me`,
+        },
+});
+
 // using github router
 app.use("/github", github);
 
