@@ -114,10 +114,10 @@ export default {
 				return;
 		}
 	},
-	run: async (res, rest, gh, sub, options) => {
+	run: async (res, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
-				await Create(res, rest, gh, options!);
+				await Create(res, gh, options!);
 				return;
 			case "update":
 				res.json({

@@ -62,10 +62,9 @@ export default {
 			options?.set("owner", gh[0].github.login)
 		);
 	},
-	run: async (res, rest, gh, sub: any[], options) => {
+	run: async (res, gh, sub: any[], options) => {
 		return (await runCommand(sub?.at(0)!))(
 			res,
-			rest,
 			gh,
 			sub?.slice(1),
 			options?.set("owner", gh[0].github.login)

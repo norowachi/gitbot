@@ -13,7 +13,7 @@ import {
 	runCommand,
 	runCommandAutoComplete,
 	getFocusedField,
-	DiscordRestClient,
+	rest,
 } from "@utils";
 import {
 	InteractionResponseType,
@@ -21,11 +21,13 @@ import {
 	MessageFlags,
 	APIInteraction,
 	APIChatInputApplicationCommandInteraction,
+	Routes,
 } from "discord-api-types/v10";
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { connect } from "mongoose";
-import { FindUser } from "@database/functions/user.js";
+import { getUser } from "@database/functions/user.js";
 import { Octokit } from "@octokit/rest";
 
 // routers
@@ -33,11 +35,24 @@ import github from "@/routers/github.js";
 
 const app: Application = express();
 
-// rest
-const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
-
 // cache the commands
 cacheCommands(commandsData);
+
+// update bot's "about me"
+rest.req("PATCH", Routes.currentApplication(), {
+	body: {
+		description: [
+			`**Version** \`${execSync("git rev-parse HEAD")
+				.toString()
+				.slice(0, 7)}\``,
+			``,
+			`Integration of the Discord and GitHub API, so you can submit your bugs (and memleaks!) without stopping your conversation :D`,
+			``,
+			`Not affiliated with either Discord nor GitHub.`,
+			`Disclaimer; avatar & banner created by https://jasonlong.me`,
+		].join("\n"),
+	},
+});
 
 // using github router
 app.use("/github", github);
@@ -77,7 +92,7 @@ app.post(
 			interaction.type === InteractionType.ApplicationCommandAutocomplete
 		) {
 			// get DBUser
-			const DBUser = await FindUser({
+			const DBUser = await getUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
 			});
 
@@ -115,7 +130,7 @@ app.post(
 			interaction.type === InteractionType.MessageComponent ||
 			interaction.type === InteractionType.ModalSubmit
 		) {
-			IntEmitter.emit(interaction.data.custom_id, [res, interaction]);
+			IntEmitter.emit(interaction.data.custom_id, res, interaction);
 			return;
 		}
 
@@ -132,7 +147,7 @@ app.post(
 				interaction as APIChatInputApplicationCommandInteraction;
 
 			// get DBUser
-			const DBUser = await FindUser({
+			const DBUser = await getUser({
 				discordId: interaction.user?.id || interaction.member?.user.id,
 			});
 
@@ -164,7 +179,6 @@ app.post(
 				await runCommand(interaction.data.name!)
 			)(
 				res,
-				rest,
 				octokit ? [DBUser!, octokit] : [],
 				getSub(interaction.data?.options?.at(0)),
 				interaction.data?.options

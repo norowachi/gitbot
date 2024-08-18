@@ -25,19 +25,29 @@ export const env = {
 		return process.env.SITE_URL?.replace(/\/$/, "");
 	},
 	MONGO_URI: process.env.MONGO_URI!,
-	DISCORD_API_URL: process.env.DISCORD_API_URL || "https://discord.com/api/v10",
+	DISCORD_API_URL:
+		process.env.DISCORD_API_URL || "https://discord.com/api/v10",
 	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN!,
 	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY!,
-	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID!,
-	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET!,
+	GITHUB_CLIENT_NAME: process.env.GITHUB_CLIENT_NAME,
+	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
 	ENCRYPTION_KEY: process.env.ENCRYPTION_KEY!,
 };
 
-const missing = Object.entries(env).find((key) => !key[1]);
+const missing = Object.entries(env).find(
+	// if its a github key && its value is empty, ignore
+	([key, value]) => !key.startsWith("GITHUB") && !value
+);
 
 if (missing) {
 	throw new Error(`Value for "${missing[0]}" is missing`);
 }
+
+/**
+ * rest client for the discord api
+ */
+export const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN!);
 
 /**
  * Interaction Commands data
@@ -104,7 +114,9 @@ export function valueToUint8Array(
 			if (matches == null) {
 				throw new Error("Value is not a valid hex string");
 			}
-			const hexVal = matches.map((byte: string) => Number.parseInt(byte, 16));
+			const hexVal = matches.map((byte: string) =>
+				Number.parseInt(byte, 16)
+			);
 			return new Uint8Array(hexVal);
 		}
 
@@ -254,7 +266,9 @@ export function verifyKeyMiddleware(
 				// Attempt to reconstruct the raw buffer. This works but is risky
 				// because it depends on JSON.stringify matching the Discord backend's
 				// JSON serialization.
-				await onBodyComplete(Buffer.from(JSON.stringify(req.body), "utf-8"));
+				await onBodyComplete(
+					Buffer.from(JSON.stringify(req.body), "utf-8")
+				);
 			}
 		} else {
 			const chunks: Array<Uint8Array> = [];
@@ -313,7 +327,6 @@ export function decryptToken(encryptedToken: string): string {
  * @returns {Promise<RESTPatchAPIInteractionOriginalResponseJSONBody>}
  */
 export async function ClearComponents(
-	rest: DiscordRestClient,
 	interaction: APIInteraction
 ): Promise<RESTPatchAPIInteractionOriginalResponseJSONBody> {
 	return await rest.req(

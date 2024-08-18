@@ -178,7 +178,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, _rest, [db], sub, options) => {
+	run: async (res, [db], sub, options) => {
 		const interaction = res.req.body as APIInteraction;
 		const userId = interaction.member?.user.id || interaction.user?.id;
 

@@ -5,7 +5,6 @@ import {
 } from "discord-api-types/v10";
 import {
 	CommandData,
-	PullsOptions,
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
 } from "@utils";
@@ -66,7 +65,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, per_pagerest, gh, sub) => {
+	run: async (res, gh, sub) => {
 		switch (sub![0]) {
 			// list repositories
 			case "list": {

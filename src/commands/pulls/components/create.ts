@@ -117,7 +117,9 @@ export default async function Create(
 			content: `[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
 			embeds: [embed],
 			components: components,
-			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
+			flags: db.settings.misc.ephemeral
+				? MessageFlags.Ephemeral
+				: undefined,
 		},
 	});
 }

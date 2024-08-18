@@ -88,7 +88,7 @@ export default {
 				return;
 		}
 	},
-	run: async (res, _rest, gh, sub, options) => {
+	run: async (res, gh, sub, options) => {
 		switch (sub![0]) {
 			case "create":
 				await Create(res, gh, options!);

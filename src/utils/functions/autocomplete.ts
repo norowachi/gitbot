@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { getUser, getUsers } from "@utils";
+import { getLevelUser, getLevelUserName } from "@utils";
 import { APIApplicationCommandOptionChoice } from "discord-api-types/v10";
 import Fuse from "fuse.js";
 
@@ -14,7 +14,7 @@ export async function handleRepoAutocomplete(
 	partialRepo?: string
 ) {
 	// get user
-	const user = await getUser(octo, owner, isAuthed);
+	const user = await getLevelUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	// get the repos' name in an array
 	const repos = [...new Set(user.repos.map((repo) => repo.name))];
@@ -47,15 +47,15 @@ export async function handlePullNumberAutocomplete(
 ) {
 	let pulls: undefined | number[] = undefined;
 	// get user
-	const user = await getUser(octo, owner, isAuthed);
+	const user = await getLevelUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	const repoData = user.repos.find(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
 	);
 	if (!repoData)
-		pulls = (await octo.pulls.list({ owner, repo }).catch((_) => {}))?.data.map(
-			(p) => p.number
-		);
+		pulls = (
+			await octo.pulls.list({ owner, repo }).catch((_) => {})
+		)?.data.map((p) => p.number);
 	else pulls = repoData.pulls;
 
 	// if no partial number, return all the pull numbers
@@ -63,8 +63,9 @@ export async function handlePullNumberAutocomplete(
 
 	// filter pulls to get the ones that includes with the partial number
 	return (
-		pulls?.filter((p) => p.toString().includes(partialNumber)).slice(0, 25) ||
-		[]
+		pulls
+			?.filter((p) => p.toString().includes(partialNumber))
+			.slice(0, 25) || []
 	);
 }
 
@@ -81,7 +82,7 @@ export async function handleIssueNumberAutocomplete(
 ) {
 	let issues: undefined | number[] = undefined;
 	// get user
-	const user = await getUser(octo, owner, isAuthed);
+	const user = await getLevelUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	const repoData = user.repos.find(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
@@ -97,8 +98,9 @@ export async function handleIssueNumberAutocomplete(
 
 	// filter issues to get the ones that includes with the partial number
 	return (
-		issues?.filter((i) => i.toString().includes(partialNumber)).slice(0, 25) ||
-		[]
+		issues
+			?.filter((i) => i.toString().includes(partialNumber))
+			.slice(0, 25) || []
 	);
 }
 
@@ -113,7 +115,7 @@ export async function handleLabelAutocomplete(
 	partialLabel?: string
 ) {
 	// get user
-	const user = await getUser(octo, owner, isAuthed);
+	const user = await getLevelUser(octo, owner, isAuthed);
 	if (!user || !user.repos) return;
 	const repoData = user.repos.find(
 		(r) => r.name.toLowerCase() === repo.toLowerCase()
@@ -130,25 +132,30 @@ export async function handleLabelAutocomplete(
 			.map((c) => ({ ...c, value: String(c.value).trim().toLowerCase() }))
 			.filter(
 				(v) =>
-					!curval.at(-1)?.includes(String(v.value)) || curval.at(-1) === v.value
+					!curval.at(-1)?.includes(String(v.value)) ||
+					curval.at(-1) === v.value
 			)
 			.map((v) => ({
 				name: (curval.slice(0, -1).join(", ") + ", " + v.name).replace(
 					/^,\s*/gm,
 					""
 				),
-				value: (curval.slice(0, -1).join(", ") + ", " + v.value).replace(
-					/^,\s*/gm,
-					""
-				),
+				value: (
+					curval.slice(0, -1).join(", ") +
+					", " +
+					v.value
+				).replace(/^,\s*/gm, ""),
 			}))
 			.filter(
-				(v) => v.value === [...new Set(v.value.split(/,\s*/g))].join(", ")
+				(v) =>
+					v.value === [...new Set(v.value.split(/,\s*/g))].join(", ")
 			);
 
 	if (!repoData) {
 		const data = (
-			await octo.issues.listLabelsForRepo({ owner, repo }).catch((_) => {})
+			await octo.issues
+				.listLabelsForRepo({ owner, repo })
+				.catch((_) => {})
 		)?.data.map((l) => ({
 			name: l.name,
 			value: l.name,
@@ -158,10 +165,9 @@ export async function handleLabelAutocomplete(
 		else return;
 	}
 
-	return joinLabels(repoData.labels.map((l) => ({ name: l, value: l }))).slice(
-		0,
-		25
-	);
+	return joinLabels(
+		repoData.labels.map((l) => ({ name: l, value: l }))
+	).slice(0, 25);
 }
 
 /**
@@ -172,7 +178,7 @@ export async function handleUserAutocomplete(
 	login: string,
 	partialUser?: string
 ) {
-	const users = [...new Set([...(await getUsers()), login])];
+	const users = [...new Set([...(await getLevelUserName()), login])];
 
 	if (!partialUser) return users.slice(0, 25);
 

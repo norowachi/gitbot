@@ -30,7 +30,9 @@ export default class DiscordRestClient {
 			headers?:
 				| (RawAxiosRequestHeaders &
 						Partial<
-							{ [Key in Method as Lowercase<Key>]: AxiosHeaders } & {
+							{
+								[Key in Method as Lowercase<Key>]: AxiosHeaders;
+							} & {
 								common: AxiosHeaders;
 							}
 						>)
@@ -46,7 +48,8 @@ export default class DiscordRestClient {
 
 		headers["User-Agent"] = "norowa.dev";
 		headers["Authorization"] = `Bot ${this.token}`;
-		if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+		if (!headers["Content-Type"])
+			headers["Content-Type"] = "application/json";
 
 		// send the req
 		const result = await axios({
@@ -65,8 +68,8 @@ export default class DiscordRestClient {
 		// if hit rate limiy, retry after the time specified
 		if (json.retry_after) {
 			timeout =
-				(parseInt(result.headers["Retry-After"] || "0") || json.retry_after) *
-				1000;
+				(parseInt(result.headers["Retry-After"] || "0") ||
+					json.retry_after) * 1000;
 			if (this.emitter)
 				this.emitter.emit(
 					"debug-rest",
@@ -96,7 +99,9 @@ export default class DiscordRestClient {
 
 	public get me() {
 		return {
-			id: Buffer.from(this.token.split(".")[0], "base64").toString("ascii"),
+			id: Buffer.from(this.token.split(".")[0], "base64").toString(
+				"ascii"
+			),
 		};
 	}
 }

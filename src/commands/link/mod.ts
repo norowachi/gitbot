@@ -1,4 +1,6 @@
 import {
+	APIActionRowComponent,
+	APIButtonComponent,
 	APIInteraction,
 	APIInteractionResponseCallbackData,
 	ApplicationCommandType,
@@ -16,7 +18,7 @@ import {
 	IntEmitter,
 	OctoErrMsg,
 } from "@utils";
-import { FindUser, InitUser } from "@database/functions/user.js";
+import { getUser, InitUser } from "@database/functions/user.js";
 import { UserEnums } from "@database/interfaces/user.js";
 import { randomBytes, hash } from "node:crypto";
 import { Octokit } from "@octokit/rest";
@@ -41,7 +43,7 @@ export default {
 			});
 
 		// check if user is already linked
-		if (await FindUser({ discordId: userId }))
+		if (await getUser({ discordId: userId }))
 			return res.json({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {
@@ -60,6 +62,31 @@ export default {
 			if (ghLinks.has(random)) ghLinks.delete(random);
 		}, 10 * 60 * 1000);
 
+		let components: APIActionRowComponent<APIButtonComponent> = {
+			type: ComponentType.ActionRow,
+			components: [
+				{
+					type: ComponentType.Button,
+					style: ButtonStyle.Primary,
+					label: "Add Personal Token",
+					custom_id: `keybtn-${userId}`,
+				},
+			],
+		};
+
+		if (
+			env.GITHUB_CLIENT_NAME &&
+			env.GITHUB_CLIENT_ID &&
+			env.GITHUB_CLIENT_SECRET
+		) {
+			components.components.unshift({
+				type: ComponentType.Button,
+				style: ButtonStyle.Link,
+				label: "Sign in",
+				url: `${env.SITE_URL}/github/verify/${random}`,
+			});
+		}
+
 		// send sign up link
 		res.json({
 			type: InteractionResponseType.ChannelMessageWithSource,
@@ -67,25 +94,7 @@ export default {
 				content:
 					"Link your Github account to use the other commands! Expires after 10 Minutes",
 				flags: MessageFlags.Ephemeral,
-				components: [
-					{
-						type: ComponentType.ActionRow,
-						components: [
-							{
-								type: ComponentType.Button,
-								style: ButtonStyle.Link,
-								label: "Sign in",
-								url: `${env.SITE_URL}/github/verify/${random}`,
-							},
-							{
-								type: ComponentType.Button,
-								style: ButtonStyle.Primary,
-								label: "Add Personal Token",
-								custom_id: `keybtn-${userId}`,
-							},
-						],
-					},
-				],
+				components: [components],
 			} as APIInteractionResponseCallbackData,
 		});
 
@@ -133,23 +142,25 @@ async function CreateKeyModal(userId: string, res: any) {
 	});
 
 	// handle the submit button
-	IntEmitter.on(`keysubmit-${userId}`, async (...[res, int]) => {
+	IntEmitter.on(`keysubmit-${userId}`, async (res, int) => {
 		// get the private key
 		const key = int.data.components[0].components[0].value;
 
 		const AuthRes = (
-			await new Octokit({ auth: key }).users.getAuthenticated().catch((e) => {
-				res.json({
-					type: InteractionResponseType.ChannelMessageWithSource,
-					data: {
-						content: `An error occured while verifying your private key.\n${OctoErrMsg(
-							e
-						)}`,
-						flags: MessageFlags.Ephemeral,
-					},
-				});
-				return;
-			})
+			await new Octokit({ auth: key }).users
+				.getAuthenticated()
+				.catch((e) => {
+					res.json({
+						type: InteractionResponseType.ChannelMessageWithSource,
+						data: {
+							content: `An error occured while verifying your private key.\n${OctoErrMsg(
+								e
+							)}`,
+							flags: MessageFlags.Ephemeral,
+						},
+					});
+					return;
+				})
 		)?.data;
 		if (!AuthRes) return;
 
@@ -186,7 +197,7 @@ async function CreateKeyModal(userId: string, res: any) {
 		});
 
 		// handle the accept buttons
-		IntEmitter.on(`accept-${userId}`, async (...[res]) => {
+		IntEmitter.on(`accept-${userId}`, async (res) => {
 			// add the key to the database
 			// initialize the user
 			const InitUserResult = await InitUser({
@@ -196,13 +207,7 @@ async function CreateKeyModal(userId: string, res: any) {
 				github: {
 					id: AuthRes.id.toString(),
 					login: AuthRes.login,
-					name: AuthRes.name,
-					location: AuthRes.location,
-					bio: AuthRes.bio,
-					twitter: AuthRes.twitter_username,
-					followers: AuthRes.followers,
-					following: AuthRes.following,
-					created_at: AuthRes.created_at,
+					type: AuthRes.type,
 					access_token: encryptToken(key),
 				},
 			});
@@ -211,7 +216,8 @@ async function CreateKeyModal(userId: string, res: any) {
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
-						content: "An error occured while adding your private key",
+						content:
+							"An error occured while adding your private key",
 						flags: MessageFlags.Ephemeral,
 					},
 				});
@@ -230,7 +236,7 @@ async function CreateKeyModal(userId: string, res: any) {
 		});
 
 		// handle reject
-		IntEmitter.on(`reject-${userId}`, async (...[res]) => {
+		IntEmitter.on(`reject-${userId}`, async (res) => {
 			// send the rejection message
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
