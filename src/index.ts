@@ -13,7 +13,7 @@ import {
 	runCommand,
 	runCommandAutoComplete,
 	getFocusedField,
- rest
+	rest,
 } from "@utils";
 import {
 	InteractionResponseType,
@@ -21,7 +21,7 @@ import {
 	MessageFlags,
 	APIInteraction,
 	APIChatInputApplicationCommandInteraction,
- Routes
+	Routes,
 } from "discord-api-types/v10";
 import fs from "node:fs";
 import path from "node:path";
@@ -40,15 +40,18 @@ cacheCommands(commandsData);
 
 // update bot's "about me"
 rest.req("PATCH", Routes.currentApplication(), {
-        body: {
-                description: `**Version** \`${execSync("git rev-parse HEAD")
-                        .toString()
-                        .slice(0, 7)}\`\n
-Integration of the Discord and GitHub API, so you can submit your bugs (and memleaks!) without stopping your conversation :D
-
-Not affiliated with either Discord nor GitHub.
-Disclaimer; avatar & banner created by https://jasonlong.me`,
-        },
+	body: {
+		description: [
+			`**Version** \`${execSync("git rev-parse HEAD")
+				.toString()
+				.slice(0, 7)}\``,
+			``,
+			`Integration of the Discord and GitHub API, so you can submit your bugs (and memleaks!) without stopping your conversation :D`,
+			``,
+			`Not affiliated with either Discord nor GitHub.`,
+			`Disclaimer; avatar & banner created by https://jasonlong.me`,
+		].join("\n"),
+	},
 });
 
 // using github router
