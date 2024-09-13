@@ -226,7 +226,7 @@ async function CreateKeyModal(userId: string, res: any) {
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
 				data: {
-					content: "Your private key has been added successfully!",
+					content: "Your private key has been added successfully!\nFor information on how to use gitbot please see [this guide](https://norowa.dev/gitbot/guide?success)",
 					components: [],
 					flags: MessageFlags.Ephemeral,
 				},
