@@ -1,4 +1,4 @@
-# GITBOT (real)
+# GITBOT
 
 Integration of the discord and github api, so you can create bugs (and memleaks!) without stopping your conversation :D
 
@@ -14,11 +14,10 @@ You can use [Gitbot](https://norowa.dev/gitbot/invite) on discord without having
 2. [NodeJS](https://nodejs.org)
 3. A [MongoDB](https://mongodb.com) DataBase
    > learn how to create one [here](https://www.mongodb.com/resources/products/fundamentals/create-database)
-4. [Docker](https://docker.com) (Optional)
 
-## SelfHosting without docker
+## Self Hosting
 
-1. Clone the repo
+1. Clone the repo & Go to project's dir.
    > ```sh
    > git clone https://github.com/Noro95/gitbot && cd gitbot
    > ```
@@ -29,7 +28,7 @@ You can use [Gitbot](https://norowa.dev/gitbot/invite) on discord without having
    > ```sh
    > npm i -g pnpm@latest
    > ```
-5. Go to project Dir. & Install all dependencies
+5. Install all dependencies
    > ```
    > pnpm i -P --frozen-lockfile
    > ```
@@ -37,36 +36,9 @@ You can use [Gitbot](https://norowa.dev/gitbot/invite) on discord without having
    > ```
    > pnpm register
    > ```
-7. Finally start the gitbot
+7. Finally start the bot
    > ```
    > pnpm start
    > ```
 
-And now you also have your own local gitbot! (_yippe_)
-
-
-## SelfHosting with Docker
-
-##### (certified "it works on my machine" moment) the docker version is somehow not running correctly on my machine :P
-
-1. Clone the repo
-   > ```sh
-   > git clone https://github.com/Noro95/gitbot && cd gitbot
-   > ```
-2. Create a `.env` file and fill it according to `example.env`
-3. The Docker Commands
-
-- 1. Build the image
-     > ```sh
-     > docker compose build
-     > ```
-- 2. Register the commands
-     > ```sh
-     > docker run --rm gitbot-app pnpm register
-     > ```
-- 3. Run the GitBot
-     > ```sh
-     > docker compose up
-     > ```
-
-and voila! you now have your own friendly local gitbot.
+And now you also have your own local gitbot! _(yippe)_

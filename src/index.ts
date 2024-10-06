@@ -47,6 +47,8 @@ rest.req("PATCH", Routes.currentApplication(), {
 				.slice(0, 7)}\``,
 			``,
 			`Integration of the Discord and GitHub API, so you can submit your bugs (and memleaks!) without stopping your conversation :D`,
+			`Terms: https://norowa.dev/gitbot/terms`,
+			`Privacy Policy: https://norowa.dev/gitbot/privacy`,
 			``,
 			`Not affiliated with either Discord nor GitHub.`,
 			`Disclaimer; avatar & banner created by https://jasonlong.me`,
