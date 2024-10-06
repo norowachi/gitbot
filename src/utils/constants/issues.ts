@@ -40,12 +40,6 @@ export const IssueOptions: APIApplicationCommandOption[] = [
 				required: false,
 				autocomplete: true,
 			},
-			{
-				name: "milestone",
-				description: "The milestone number",
-				type: ApplicationCommandOptionType.Integer,
-				required: false,
-			},
 		],
 	},
 	{
