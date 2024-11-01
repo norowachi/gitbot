@@ -4,7 +4,6 @@ import { DeleteUser, InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
 import axios from "axios";
-import { execSync } from "node:child_process";
 import { inspect } from "node:util";
 
 // setting up a router
@@ -54,11 +53,6 @@ github.post("/webhook", json(), (req, res) => {
 	) {
 		DeleteUser({ githubId: body.sender.id });
 	}
-	execSync(
-		`echo ${JSON.stringify(
-			inspect(req.body, { depth: Infinity })
-		)} >> webhook.log`
-	);
 
 	res.sendStatus(200);
 });
