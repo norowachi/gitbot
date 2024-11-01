@@ -4,7 +4,6 @@ import { DeleteUser, InitUser } from "@database/functions/user.js";
 import { APIUser, Routes } from "discord-api-types/v10";
 import { Octokit } from "@octokit/rest";
 import axios from "axios";
-import { inspect } from "node:util";
 
 // setting up a router
 const github = Router();
