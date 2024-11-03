@@ -92,7 +92,7 @@ export default {
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
 				content:
-					"Link your Github account to use the other commands! Expires after 10 Minutes\n\nNote: to use Gitbot with external repos you might need to use a classic token [(?)](https://github.com/orgs/community/discussions/106661#discussioncomment-10114091)",
+					"Link your Github account to use the other commands! Expires after 10 Minutes\n\nNote: to use Gitbot with external repos you might need to use a classic token [(?)](<https://github.com/orgs/community/discussions/106661#discussioncomment-10114091>)",
 				flags: MessageFlags.Ephemeral,
 				components: [components],
 			} as APIInteractionResponseCallbackData,
