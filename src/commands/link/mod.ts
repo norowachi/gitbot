@@ -92,7 +92,7 @@ export default {
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
 				content:
-					"Link your Github account to use the other commands! Expires after 10 Minutes",
+					"Link your Github account to use the other commands! Expires after 10 Minutes\n\nNote: to use Gitbot with external repos you might need to use a classic token [(?)](https://github.com/orgs/community/discussions/106661#discussioncomment-10114091)",
 				flags: MessageFlags.Ephemeral,
 				components: [components],
 			} as APIInteractionResponseCallbackData,
@@ -226,7 +226,7 @@ async function CreateKeyModal(userId: string, res: any) {
 			res.json({
 				type: InteractionResponseType.UpdateMessage,
 				data: {
-					content: "Your private key has been added successfully!\nFor information on how to use gitbot please see [this guide](https://norowa.dev/gitbot/guide?success)",
+					content: "Your private key has been added successfully!\nFor information on how to use gitbot please see [this guide](https://noro.cc/gitbot/guide?success)",
 					components: [],
 					flags: MessageFlags.Ephemeral,
 				},

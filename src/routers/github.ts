@@ -33,7 +33,7 @@ github.get("/callback", async (req, res) => {
 	else if (typeof result === "string") return res.send(result);
 
 	// redirect to the guide page with success message
-	return res.redirect(`https://norowa.dev/gitbot/guide?success`);
+	return res.redirect(`https://noro.cc/gitbot/guide?success`);
 });
 
 // the webhooks route
