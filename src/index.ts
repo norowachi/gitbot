@@ -66,29 +66,6 @@ app.post(
 	async (req, res) => {
 		let interaction: APIInteraction = req.body;
 
-		console.log(
-			DateInISO(),
-			ChangeConsoleColor(
-				"FgRed",
-				interaction.user?.username ||
-					interaction.member?.user.username ||
-					"Unknown"
-			),
-			"used",
-			ChangeConsoleColor(
-				"FgCyan",
-				(interaction.data as any)?.name,
-				interaction.type
-			),
-			"in",
-			ChangeConsoleColor(
-				"FgMagenta",
-				interaction.channel?.name,
-				"|",
-				interaction.channel?.id
-			)
-		);
-
 		// if its an autocomplete interaction
 		if (
 			interaction.type === InteractionType.ApplicationCommandAutocomplete
@@ -126,6 +103,29 @@ app.post(
 			);
 			return;
 		}
+
+		console.log(
+			DateInISO(),
+			ChangeConsoleColor(
+				"FgRed",
+				interaction.user?.username ||
+					interaction.member?.user.username ||
+					"Unknown"
+			),
+			"used",
+			ChangeConsoleColor(
+				"FgCyan",
+				(interaction.data as any)?.name,
+				interaction.type
+			),
+			"in",
+			ChangeConsoleColor(
+				"FgMagenta",
+				interaction.channel?.name,
+				"|",
+				interaction.channel?.id
+			)
+		);
 
 		// if its a message component or a modal submit emit an interaction with given custom id
 		if (
