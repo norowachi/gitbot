@@ -28,7 +28,6 @@ export const env = {
 	DISCORD_API_URL:
 		process.env.DISCORD_API_URL || "https://discord.com/api/v10",
 	DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN!,
-	DISCORD_APP_PUBLIC_KEY: process.env.DISCORD_APP_PUBLIC_KEY!,
 	GITHUB_CLIENT_NAME: process.env.GITHUB_CLIENT_NAME,
 	GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
 	GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
