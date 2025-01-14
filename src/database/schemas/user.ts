@@ -24,6 +24,7 @@ const UserData = new Schema<DBUserDoc>(
 			],
 			misc: {
 				ephemeral: Boolean,
+				simple: Boolean,
 			},
 		},
 	},

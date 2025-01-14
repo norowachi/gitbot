@@ -23,6 +23,11 @@ export enum UserEnums {
 export type DBUserDoc = Document & DBUser;
 
 /**
+ * User's preferred response types
+ */
+export type DBUserMiscResponse = "embeds" | "text";
+
+/**
  * User document schema
  */
 export interface DBUser {
@@ -63,7 +68,14 @@ export interface DBUser {
 			}
 		];
 		misc: {
-			ephemeral: boolean;
+			/**
+			 * Whether the message should be ephermal/hidden or not
+			 */
+			ephemeral?: boolean;
+			/**
+			 * Whether to omit the embeds in the response or not
+			 */
+			simple?: boolean;
 		};
 	};
 }

@@ -77,9 +77,6 @@ export default async function Create(
 	// var for easier access
 	const data = req.data;
 
-	// for buttons
-	options.set("issue_number", data.number);
-
 	// for customizer response
 	let customizersRes: string = "";
 	// handle auto_project customizer
@@ -106,9 +103,6 @@ export default async function Create(
 			? "Added issue to project\n"
 			: "*Error adding issue to project\n";
 
-	// create the embed
-	const embed = CreateIssueEmbed(data);
-
 	// button components to be added
 	const components = [
 		{
@@ -128,13 +122,18 @@ export default async function Create(
 	return res.json({
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
-			content: `[\`${data.user?.login}\`](${
-				data.user?.html_url
-			}) opened this issue ${DiscordTimestamp(data.created_at, "R")} | ${
-				data.comments
-			} comments\n${customizersRes}`,
-			embeds: [embed],
-			components: components,
+			content: db.settings.misc.simple
+				? `Issue #${data.number} created: [${data.title}](${data.url})`
+				: `[\`${data.user?.login}\`](${
+						data.user?.html_url
+				  }) opened this issue ${DiscordTimestamp(
+						data.created_at,
+						"R"
+				  )} | ${data.comments} comments\n${customizersRes}`,
+			embeds: db.settings.misc.simple
+				? undefined
+				: [CreateIssueEmbed(data)],
+			components: db.settings.misc.simple ? undefined : components,
 			flags: db.settings.misc.ephemeral
 				? MessageFlags.Ephemeral
 				: undefined,

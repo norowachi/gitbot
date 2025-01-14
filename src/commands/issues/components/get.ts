@@ -51,8 +51,6 @@ export default async function Get(
 
 	// make a var for easier access
 	const data = req.data;
-	// create the embed
-	const embed = CreateIssueEmbed(data);
 
 	// button components to be added
 	const components = [
@@ -78,9 +76,13 @@ export default async function Get(
 			}) opened this issue ${DiscordTimestamp(data.created_at, "R")} | ${
 				data.comments
 			} comments`,
-			embeds: [embed],
-			components: components,
-			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
+			embeds: db.settings.misc.simple
+				? undefined
+				: [CreateIssueEmbed(data)],
+			components: db.settings.misc.simple ? undefined : components,
+			flags: db.settings.misc.ephemeral
+				? MessageFlags.Ephemeral
+				: undefined,
 		},
 	});
 }

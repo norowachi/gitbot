@@ -45,13 +45,20 @@ export default async function Close(
 	return res.json({
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
-			content: `## Closed\n\n[\`${data.user?.login}\`](${
-				data.user?.html_url
-			}) opened this issue ${DiscordTimestamp(data.created_at, "R")} | ${
-				data.comments
-			} comments`,
-			embeds: [CreateIssueEmbed(data)],
-			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
+			content: db.settings.misc.simple
+				? `Issue #${data.number} closed: [${data.title}](${data.url})`
+				: `## Closed\n\n[\`${data.user?.login}\`](${
+						data.user?.html_url
+				  }) opened this issue ${DiscordTimestamp(
+						data.created_at,
+						"R"
+				  )} | ${data.comments} comments`,
+			embeds: db.settings.misc.simple
+				? undefined
+				: [CreateIssueEmbed(data)],
+			flags: db.settings.misc.ephemeral
+				? MessageFlags.Ephemeral
+				: undefined,
 		},
 	});
 }

@@ -36,6 +36,13 @@ export default {
 					type: ApplicationCommandOptionType.Boolean,
 					required: false,
 				},
+				{
+					name: "simple",
+					description:
+						"Whether to send a simpler response to commands or the full one (default: false)",
+					type: ApplicationCommandOptionType.Boolean,
+					required: false,
+				},
 			],
 		},
 		{
@@ -214,6 +221,8 @@ export default {
 // misc stuff
 function Misc(res: Response, userId: string, options: Map<string, any>) {
 	const ephemeral: boolean | undefined = options?.get("ephemeral");
+	const simple: boolean | undefined = options?.get("simple");
+
 	// if no options at all
 	if (!options?.size) {
 		return res.json({
@@ -225,13 +234,21 @@ function Misc(res: Response, userId: string, options: Map<string, any>) {
 		});
 	}
 	// build response
-	let response = "Settings Updated:\n";
+	let response = "## Settings Updated:\n";
+
 	// edit ephemeral
 	if (typeof ephemeral !== "undefined") {
 		editUserSettings(userId, {
 			misc: { ephemeral },
 		});
 		response += `**Ephemeral** is now \`${ephemeral}\`\n`;
+	}
+	// edit simple
+	if (typeof simple !== "undefined") {
+		editUserSettings(userId, {
+			misc: { simple },
+		});
+		response += `**Simple** is now \`${simple}\`\n`;
 	}
 
 	// lastly return response/ack

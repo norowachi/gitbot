@@ -51,8 +51,6 @@ export default async function Get(
 
 	// make a var for easier access
 	const data = req.data;
-	// create the embed
-	const embed = CreatePREmbed(data);
 
 	// button components to be added
 	const components = [
@@ -74,9 +72,11 @@ export default async function Get(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: `[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
-			embeds: [embed],
-			components: components,
-			flags: db.settings.misc.ephemeral ? MessageFlags.Ephemeral : undefined,
+			embeds: db.settings.misc.simple ? undefined : [CreatePREmbed(data)],
+			components: db.settings.misc.simple ? undefined : components,
+			flags: db.settings.misc.ephemeral
+				? MessageFlags.Ephemeral
+				: undefined,
 		},
 	});
 }
