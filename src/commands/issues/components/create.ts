@@ -123,7 +123,7 @@ export default async function Create(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: db.settings.misc.simple
-				? `Issue #${data.number} created: [${data.title}](${data.url})`
+				? `Issue #${data.number} created: [${data.title}](${data.html_url})`
 				: `[\`${data.user?.login}\`](${
 						data.user?.html_url
 				  }) opened this issue ${DiscordTimestamp(

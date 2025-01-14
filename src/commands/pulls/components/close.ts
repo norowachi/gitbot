@@ -44,7 +44,7 @@ export default async function Close(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: db.settings.misc.simple
-				? `Pull Request #${data.number} closed: [${data.title}](${data.url})`
+				? `Pull Request #${data.number} closed: [${data.title}](${data.html_url})`
 				: `## Closed\n\n[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
 			embeds: db.settings.misc.simple ? undefined : [CreatePREmbed(data)],
 			flags: db.settings.misc.ephemeral
