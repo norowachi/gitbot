@@ -7,6 +7,7 @@ import {
 	CommandData,
 	handleRepoAutocomplete,
 	handleUserAutocomplete,
+	OctoErrMsg,
 } from "@utils";
 
 export default {
@@ -70,7 +71,18 @@ export default {
 			// list repositories
 			case "list": {
 				// get repositories
-				const repositories = await gh[1].repos.listForAuthenticatedUser();
+				const repositories = await gh[1].repos
+					.listForAuthenticatedUser()
+					.catch((e) => {
+						res.json({
+							type: InteractionResponseType.ChannelMessageWithSource,
+							data: {
+								content: OctoErrMsg(e),
+								flags: MessageFlags.Ephemeral,
+							},
+						});
+						return;
+					});
 				// send the message
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
