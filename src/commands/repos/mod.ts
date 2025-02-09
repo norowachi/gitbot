@@ -83,6 +83,9 @@ export default {
 						});
 						return;
 					});
+
+				if (!repositories) return;
+
 				// send the message
 				return res.json({
 					type: InteractionResponseType.ChannelMessageWithSource,
