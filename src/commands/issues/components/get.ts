@@ -71,9 +71,13 @@ export default async function Get(
 	return res.json({
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
-			content: `[\`${data.user?.login}\`](${
+			content: `[\`${data.user?.login}\`](<${
 				data.user?.html_url
-			}) opened this issue ${DiscordTimestamp(data.created_at, "R")} | ${
+			}>) opened ${
+				db.settings.misc.simple
+					? "this issue"
+					: `[${data.title}](<${data.html_url}>) #${data.number}`
+			} ${DiscordTimestamp(data.created_at, "R")} | ${
 				data.comments
 			} comments`,
 			embeds: db.settings.misc.simple

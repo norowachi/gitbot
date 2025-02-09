@@ -109,8 +109,8 @@ export default async function Create(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: db.settings.misc.simple
-				? `Pull Request #${data.number} created: [${data.title}](${data.html_url})`
-				: `[\`${data.user.login}\`](${data.user.html_url}) wants to merge ${data.commits} commits into [\`${data.base.label}\`](${data.base.repo.html_url}) from [\`${data.head.label}\`](${data.head.repo?.html_url})`,
+				? `Pull Request #${data.number} created: [${data.title}](<${data.html_url}>)`
+				: `[\`${data.user.login}\`](<${data.user.html_url}>) wants to merge ${data.commits} commits into [\`${data.base.label}\`](<${data.base.repo.html_url}>) from [\`${data.head.label}\`](<${data.head.repo?.html_url}>)`,
 			embeds: db.settings.misc.simple ? undefined : [CreatePREmbed(data)],
 			components: db.settings.misc.simple ? undefined : components,
 			flags: db.settings.misc.ephemeral

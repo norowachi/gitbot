@@ -123,10 +123,10 @@ export default async function Create(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: db.settings.misc.simple
-				? `Issue #${data.number} created: [${data.title}](${data.html_url})`
-				: `[\`${data.user?.login}\`](${
+				? `Issue #${data.number} created: [${data.title}](<${data.html_url}>)`
+				: `[\`${data.user?.login}\`](<${
 						data.user?.html_url
-				  }) opened this issue ${DiscordTimestamp(
+				  }>) opened this issue ${DiscordTimestamp(
 						data.created_at,
 						"R"
 				  )} | ${data.comments} comments\n${customizersRes}`,

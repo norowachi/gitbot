@@ -46,10 +46,10 @@ export default async function Close(
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			content: db.settings.misc.simple
-				? `Issue #${data.number} closed: [${data.title}](${data.html_url})`
-				: `## Closed\n\n[\`${data.user?.login}\`](${
+				? `Issue #${data.number} closed: [${data.title}](<${data.html_url}>)`
+				: `## Closed\n\n[\`${data.user?.login}\`](<${
 						data.user?.html_url
-				  }) opened this issue ${DiscordTimestamp(
+				  }>) opened this issue ${DiscordTimestamp(
 						data.created_at,
 						"R"
 				  )} | ${data.comments} comments`,
