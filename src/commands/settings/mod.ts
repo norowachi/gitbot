@@ -151,32 +151,37 @@ export default {
 					data: {
 						choices: [
 							// get org projects
-							(
+							...((
 								projects as any
 							)[0]?.organization.projectsV2.nodes?.map((n: any) =>
 								n
 									? { name: n.title, value: n.id }
 									: {
-											name: "Projects not accessible by integration",
+											name: "Project not accessible by integration",
 											value: "x",
 									  }
-							) || {
-								name: "No org projects found",
-								value: "x",
-							},
+							) || [
+								{
+									name: "No org projects found",
+									value: "x",
+								},
+							]),
 							// get user projects
-							(projects as any)[1]?.user.projectsV2.nodes?.map(
-								(n: any) =>
-									n
-										? { name: n.title, value: n.id }
-										: {
-												name: "Projects not accessible by integration",
-												value: "x",
-										  }
-							) || {
-								name: "No user projects found",
-								value: "x",
-							},
+							...((
+								projects as any
+							)[1]?.user.projectsV2.nodes?.map((n: any) =>
+								n
+									? { name: n.title, value: n.id }
+									: {
+											name: "Project not accessible by integration",
+											value: "x",
+									  }
+							) || [
+								{
+									name: "No user projects found",
+									value: "x",
+								},
+							]),
 						],
 					},
 				});
