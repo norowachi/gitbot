@@ -97,7 +97,7 @@ app.post("/interactions", verifyKeyMiddleware(PubKey), async (req, res) => {
 				DBUser,
 				new Octokit({
 					auth: decryptToken(DBUser.github.access_token),
-					userAgent: "gitbot.norowa.dev",
+					userAgent: "gitbot.noro.cc",
 				}),
 			],
 			interaction.data?.options
@@ -174,7 +174,7 @@ app.post("/interactions", verifyKeyMiddleware(PubKey), async (req, res) => {
 		if (DBUser && DBUser.github.access_token) {
 			octokit = new Octokit({
 				auth: decryptToken(DBUser!.github.access_token),
-				userAgent: "gitbot.norowa.dev",
+				userAgent: "gitbot.noro.cc",
 			});
 		}
 
