@@ -1,6 +1,6 @@
 # GITBOT
 
-Integration of the discord and github api, so you can create bugs (and memleaks!) without stopping your conversation :D
+Integration of the discord and github api, so you can submit bugs (and memleaks!) without stopping your conversation :D
 
 # Already Hosted Version
 
