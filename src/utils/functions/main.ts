@@ -1,19 +1,18 @@
-import { Response } from "express";
+import { type Response } from "express";
 import {
-  APIEmbed,
-  APIApplicationCommandInteraction,
-  APIActionRowComponent,
-  APIButtonComponent,
-  APIInteractionResponseCallbackData,
+  type APIEmbed,
+  type APIApplicationCommandInteraction,
+  type APIActionRowComponent,
+  type APIButtonComponent,
   ComponentType,
   ButtonStyle,
   InteractionResponseType,
   MessageFlags,
-  APIApplicationCommandInteractionDataOption,
+  type APIApplicationCommandInteractionDataOption,
   ApplicationCommandOptionType,
 } from "discord-api-types/v10";
 import { ConsoleColors, emojis, commandsData, rest, registry } from "@utils";
-import { Endpoints } from "@octokit/types";
+import { type Endpoints } from "@octokit/types";
 
 // ─── Command routing ──────────────────────────────────────────────────────────
 
@@ -55,7 +54,7 @@ export function getOptionsValue(
   }
   const map = new Map<string, unknown>();
   for (const option of data) {
-    map.set(option.name, (option as any).value);
+    if ("value" in option) map.set(option.name, option.value);
   }
   return map;
 }
@@ -69,7 +68,7 @@ export function getFocusedField(data: APIApplicationCommandInteractionDataOption
     ) {
       return getFocusedField(option.options ?? []);
     }
-    if ((option as any).focused) return option.name;
+    if ("focused" in option && option.focused) return option.name;
   }
   return null;
 }
@@ -118,14 +117,18 @@ export function Capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-// ─── GitHub error formatting ──────────────────────────────────────────────────
+export type OctoErrorType = Partial<{
+  response: { data: { errors: Record<string, string>[]; message: string; status: string } };
+  status: string;
+}>;
 
-export function OctoErrMsg(err: any): string {
+// ─── GitHub error formatting ──────────────────────────────────────────────────
+export function OctoErrMsg(err: OctoErrorType): string {
   const body = err?.response?.data;
   if (!body) return "The operation did not complete successfully.";
 
   const errors = body.errors
-    ?.map((e: Record<string, string>) =>
+    ?.map((e) =>
       Object.entries(e)
         .map(([k, v]) => `> ${Capitalize(k)}: \`${v}\``)
         .join("\n")
@@ -138,7 +141,7 @@ export function OctoErrMsg(err: any): string {
 }
 
 /** Reply with a standardised ephemeral GitHub error message. */
-export function octoErrResponse(res: Response, err: unknown): void {
+export function octoErrResponse(res: Response, err: OctoErrorType): void {
   res.json({
     type: InteractionResponseType.ChannelMessageWithSource,
     data: { content: OctoErrMsg(err), flags: MessageFlags.Ephemeral },
@@ -282,7 +285,7 @@ export async function embedMaker(res: Response, embeds: APIEmbed[], flags?: numb
   const nextId = `next-${stamp}`;
   const TTL = 15 * 60; // 15 minutes
 
-  const authorId = interaction.member?.user.id ?? (interaction as any).user?.id;
+  const authorId = interaction.member?.user.id ?? interaction.user?.id;
 
   // Set footer on first page
   embeds[0].footer = { text: `Page 1 of ${embeds.length}` };
@@ -356,7 +359,7 @@ export async function embedMaker(res: Response, embeds: APIEmbed[], flags?: numb
       .req("PATCH", `/webhooks/${rest.me.id}/${interaction.token}/messages/@original`, {
         body: { components: [disabledRow] },
       })
-      .catch(() => {});
+      .catch(() => null);
   }, TTL * 1000);
 }
 
@@ -528,5 +531,5 @@ export function CreatePREmbed(
 export async function emitAction(discordId: string): Promise<void> {
   // Lazy import to avoid circular: utils → kernel → utils
   const { kernel } = await import("../../index.js").catch(() => ({ kernel: null }));
-  (kernel as any)?.emit("github:action", discordId);
+  kernel?.emit("github:action", discordId);
 }

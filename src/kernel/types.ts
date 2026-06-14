@@ -34,7 +34,7 @@ export interface Module {
   version?: string;
 
   /** Slash commands this module contributes. */
-  commands?: CommandData[];
+  commands?: CommandData<boolean>[];
 
   /** Express sub-router mounted by the kernel. */
   router?: {

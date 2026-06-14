@@ -1,12 +1,13 @@
+/* eslint-disable no-unused-vars */
 import {
-  APIInteraction,
+  type APIInteraction,
   InteractionResponseType,
   MessageFlags,
-  RESTPostAPIApplicationCommandsJSONBody,
+  type RESTPostAPIApplicationCommandsJSONBody,
 } from "discord-api-types/v10";
 import type { Response } from "express";
 import { EventEmitter } from "events";
-import { Octokit } from "@octokit/rest";
+import { type Octokit } from "@octokit/rest";
 import type { DBUser } from "@database/interfaces/user.js";
 
 // ─── Error messages ───────────────────────────────────────────────────────────
@@ -55,13 +56,16 @@ export class CustomIntEmitter extends EventEmitter {
 /**
  * Describes a slash command module.
  *
- * `T = true`  → command requires the user to be GitHub-authenticated (most commands).
- * `T = false` → command works without auth (link, ping).
+ * * `T = true`  → command requires the user to be GitHub-authenticated (most commands).
+ * * `T = false` → command works without auth (link, ping).
  */
 export interface CommandData<T extends boolean = false> extends Omit<
   RESTPostAPIApplicationCommandsJSONBody,
   "id" | "application_id"
 > {
+  // API type is wrong ig, we want to enforce it being present in our code
+  description: string;
+
   /**
    * Interaction install contexts.
    * 0 = Guild, 1 = Bot DM, 2 = Private channel / group DM
@@ -85,7 +89,8 @@ export interface CommandData<T extends boolean = false> extends Omit<
     gh: T extends true ? GHContext : GHContext | [],
     sub?: string[],
     options?: Map<string, unknown>
-  ) => Promise<unknown> | unknown;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) => Promise<any> | any;
 
   /**
    * Autocomplete handler (optional).
@@ -95,7 +100,8 @@ export interface CommandData<T extends boolean = false> extends Omit<
     focused: string,
     gh: GHContext,
     options?: Map<string, unknown>
-  ) => Promise<unknown> | unknown;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) => Promise<any> | any;
 }
 
 /** Shorthand for `undefined | null | T` */

@@ -5,13 +5,11 @@ import {
   MessageFlags,
 } from "discord-api-types/v10";
 import {
-  CommandData,
+  type CommandData,
   handleRepoAutocomplete,
   handleUserAutocomplete,
-  octoErrResponse,
   safeFieldValue,
   truncate,
-  LIMITS,
 } from "@utils";
 import { editUserSettings } from "@database/functions/user.js";
 import type { APIEmbed } from "discord-api-types/v10";
@@ -109,15 +107,12 @@ export default {
             })),
           },
         });
+      default:
+        return;
     }
   },
 
-  run: async (res, gh, sub, options) => {
-    const [db, octo] = gh as [
-      import("@database/interfaces/user.js").DBUser,
-      import("@octokit/rest").Octokit,
-    ];
-
+  run: async (res, [db], sub, options) => {
     switch (sub?.[0]) {
       case "view": {
         const issueConfigs = db.settings.issues;

@@ -1,5 +1,5 @@
 import {
-  APIInteraction,
+  type APIInteraction,
   ApplicationCommandType,
   ButtonStyle,
   ComponentType,
@@ -8,7 +8,7 @@ import {
   TextInputStyle,
 } from "discord-api-types/v10";
 import {
-  CommandData,
+  type CommandData,
   Errors,
   encryptToken,
   env,
@@ -17,7 +17,6 @@ import {
   octoErrResponse,
 } from "@utils";
 import { getUser, InitUser } from "@database/functions/user.js";
-import { UserEnums } from "@database/interfaces/user.js";
 import { randomBytes, createHash } from "node:crypto";
 import { Octokit } from "@octokit/rest";
 import type { Response } from "express";
@@ -33,7 +32,7 @@ export default {
 
   run: async (res) => {
     const interaction = res.req.body as APIInteraction;
-    const userId = interaction.member?.user.id ?? (interaction as any).user?.id;
+    const userId = interaction.member?.user.id ?? interaction.user?.id;
 
     if (!userId) {
       return res.json({
@@ -94,10 +93,11 @@ export default {
     // Handle PAT modal button
     const keyBtnId = `keybtn-${userId}`;
     IntEmitter.once(keyBtnId, async (btnRes: Response) => {
-      await showKeyModal(userId, btnRes);
+      await showKeyModal(userId, btnRes).catch(() => null);
     });
 
     setTimeout(() => IntEmitter.removeAllListeners(keyBtnId), LINK_TTL_MS);
+    return;
   },
 } as CommandData;
 

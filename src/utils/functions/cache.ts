@@ -2,8 +2,7 @@ import { Octokit } from "@octokit/rest";
 import { createClient, RedisClientType } from "redis";
 import type { CachedUser, CachedRepo } from "@utils";
 import { Endpoints } from "@octokit/types";
-import { env } from "@utils";
-import { log } from "./logger.js";
+import { env, log } from "@utils";
 
 /** Cache TTL in seconds (15 minutes) */
 const CACHE_TTL_S = 15 * 60;

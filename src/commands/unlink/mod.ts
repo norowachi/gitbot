@@ -1,12 +1,12 @@
 import {
-  APIInteraction,
+  type APIInteraction,
   ApplicationCommandType,
   ButtonStyle,
   ComponentType,
   InteractionResponseType,
   MessageFlags,
 } from "discord-api-types/v10";
-import { CommandData, Errors, registry } from "@utils";
+import { type CommandData, Errors, registry } from "@utils";
 import type { UnlinkConfirmContext, UnlinkCancelContext } from "@/factories/unlink.js";
 
 const TTL = 5 * 60; // 5 minutes
@@ -20,7 +20,7 @@ export default {
 
   run: async (res) => {
     const interaction = res.req.body as APIInteraction;
-    const userId = interaction.member?.user.id ?? (interaction as any).user?.id;
+    const userId = interaction.member?.user.id ?? (interaction).user?.id;
 
     if (!userId) {
       return res.json({
@@ -81,5 +81,6 @@ export default {
       once: true,
       authorId: userId,
     });
+    return;
   },
 } as CommandData<true>;

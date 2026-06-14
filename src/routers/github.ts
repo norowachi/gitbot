@@ -26,8 +26,8 @@ router.get("/verify/:state", oauthLimiter, async (req, res) => {
     return;
   }
 
-  const { state } = req.params;
-  const { code } = req.query;
+  const state = req.params.state as string;
+  const code = req.query.code;
 
   const discordId = ghLinks.get(state);
   if (!discordId) {

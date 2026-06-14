@@ -30,7 +30,7 @@ import {
 } from "discord-api-types/v10";
 import type { APIEmbed } from "discord-api-types/v10";
 import type { Module, KernelHandle } from "../../kernel/types.js";
-import { AnnouncementModel, AnnouncementSeenModel } from "./schema.js";
+import { AnnouncementModel } from "./schema.js";
 import { buildAnnouncementEmbed, deliverViaDM, getPendingAnnouncements } from "./delivery.js";
 import { registerAnnouncementMiddleware } from "./middleware.js";
 import { env, log, truncate, safeFieldValue, LIMITS } from "@utils";
@@ -261,7 +261,7 @@ export default {
 
       // ── Autocomplete ────────────────────────────────────────────────────────
 
-      autocomplete: async (res, focused, [db]) => {
+      autocomplete: async (res, _focused, [db]) => {
         if (!isAdmin(db.discord.id)) {
           res.json({
             type: InteractionResponseType.ApplicationCommandAutocompleteResult,

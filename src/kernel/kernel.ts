@@ -18,8 +18,13 @@ import { EventEmitter } from "node:events";
 import express, { type Application, type Router } from "express";
 import mongoose from "mongoose";
 import { Octokit } from "@octokit/rest";
-import { InteractionType, InteractionResponseType, MessageFlags } from "discord-api-types/v10";
-import type { APIInteraction } from "discord-api-types/v10";
+import {
+  InteractionType,
+  InteractionResponseType,
+  MessageFlags,
+  Routes,
+} from "discord-api-types/v10";
+import type { APIInteraction, RESTGetCurrentApplicationResult } from "discord-api-types/v10";
 
 import {
   env,
@@ -38,7 +43,7 @@ import {
 import { getUser } from "@database/functions/user.js";
 import { upsertCachedUser, getRedis } from "@utils";
 
-import type { Module, LoadedModule, ModuleContext, KernelHandle } from "./types.js";
+import type { LoadedModule, ModuleContext, KernelHandle } from "./types.js";
 import { loadModuleFile, discoverModules } from "./loader.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -56,6 +61,7 @@ const DRAIN_TIMEOUT_MS = 5_000;
 export class Kernel extends EventEmitter {
   private readonly app: Application;
   private server: http.Server | null = null;
+  private PubKey: string | null = null;
   private readonly modules = new Map<string, LoadedModule>();
   /** Module-mounted Express sub-routers — we need to track them to remove on unload. */
   private readonly mountedRouters = new Map<string, { path: string; router: Router }>();
@@ -90,8 +96,18 @@ export class Kernel extends EventEmitter {
   async start(): Promise<void> {
     // Write PID file for pnpm hotrestart / external tooling
     await import("node:fs/promises").then(({ writeFile }) =>
-      writeFile(".pid", String(process.pid)).catch(() => {})
+      writeFile(".pid", String(process.pid)).catch(() => null)
     );
+    
+    this.PubKey = (
+      (await rest.req("GET", Routes.currentApplication())) as RESTGetCurrentApplicationResult
+    ).verify_key;
+
+    if (!this.PubKey) {
+      log.error("Failed to fetch application public key");
+      process.exit(1);
+    }
+
     // 1. Connect data stores
     await getRedis();
     log.info("Redis connected");
@@ -142,12 +158,14 @@ export class Kernel extends EventEmitter {
     this.app.use("/admin", this._buildAdminRouter());
 
     // GitHub OAuth
-    import("../routers/github.js").then(({ default: githubRouter }) => {
-      this.app.use("/github", githubRouter);
-    });
+    import("../routers/github.js")
+      .then(({ default: githubRouter }) => {
+        this.app.use("/github", githubRouter);
+      })
+      .catch(() => log.error("Failed to load GitHub OAuth router"));
 
     // Discord interactions
-    this.app.post("/", verifyKeyMiddleware(env.DISCORD_PUBLIC_KEY), (req, res) => {
+    this.app.post("/", verifyKeyMiddleware(this.PubKey!), (req, res) => {
       void this._handleInteraction(req.body as APIInteraction, res);
     });
   }
@@ -265,7 +283,7 @@ export class Kernel extends EventEmitter {
     await import("../factories/index.js");
 
     for (const { default: cmd } of imports) {
-      commandsData.set(cmd.name, cmd as any);
+      commandsData.set(cmd.name, cmd);
       this.builtinCommands.push(cmd.name);
     }
 
@@ -300,7 +318,7 @@ export class Kernel extends EventEmitter {
     // Register commands
     if (mod.commands?.length) {
       for (const cmd of mod.commands) {
-        commandsData.set(cmd.name, cmd as any);
+        commandsData.set(cmd.name, cmd);
         log.debug({ cmd: cmd.name, module: mod.id }, "Command registered");
       }
     }
@@ -369,7 +387,7 @@ export class Kernel extends EventEmitter {
     if (loaded.module.teardown) {
       await loaded.module
         .teardown(loaded.ctx, this.handle)
-        .catch((err) => log.warn({ err, id: loaded.id }, "Module teardown threw (ignored)"));
+        ?.catch((err) => log.warn({ err, id: loaded.id }, "Module teardown threw (ignored)"));
     }
 
     // Remove commands
@@ -385,8 +403,11 @@ export class Kernel extends EventEmitter {
       const { router } = this.mountedRouters.get(loaded.id)!;
       this.mountedRouters.delete(loaded.id);
       // Remove from express internal stack
-      const stack: any[] = (this.app as any)._router?.stack ?? [];
-      const idx = stack.findIndex((layer: any) => layer.handle === router);
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      const stack: any[] = this.app._router?.stack ?? [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const idx = stack.findIndex((layer) => layer.handle === router);
       if (idx !== -1) stack.splice(idx, 1);
     }
   }
@@ -411,7 +432,7 @@ export class Kernel extends EventEmitter {
   private _startWatcher(): void {
     if (!existsSync(MODULES_DIST_DIR)) return;
 
-    this.watcher = fsWatch(MODULES_DIST_DIR, { recursive: true }, (event, filename) => {
+    this.watcher = fsWatch(MODULES_DIST_DIR, { recursive: true }, (_event, filename) => {
       if (!filename || !filename.endsWith(".js") || filename.endsWith(".test.js")) return;
 
       const absPath = path.join(MODULES_DIST_DIR, filename);

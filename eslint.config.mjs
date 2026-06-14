@@ -43,14 +43,11 @@ export default tseslint.config(
       "prefer-const": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", paramDestructuringIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/await-thenable": "error",
-      "@typescript-eslint/no-misused-promises": [
-        "error",
-        { checksVoidReturn: { attributes: false } },
-      ],
+      "@typescript-eslint/no-misused-promises": "error",
 
       // ── Style ─────────────────────────────────────────────────────────────
       "@typescript-eslint/consistent-type-imports": [

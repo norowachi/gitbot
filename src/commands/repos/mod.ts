@@ -5,7 +5,7 @@ import {
   MessageFlags,
 } from "discord-api-types/v10";
 import {
-  CommandData,
+  type CommandData,
   handleRepoAutocomplete,
   handleUserAutocomplete,
   octoErrResponse,
@@ -16,6 +16,7 @@ import {
   LIMITS,
   truncate,
   safeFieldValue,
+  type OctoErrorType,
 } from "@utils";
 import type { APIEmbed } from "discord-api-types/v10";
 
@@ -99,12 +100,7 @@ export default {
     }
   },
 
-  run: async (res, gh, sub, options) => {
-    const [db, octo] = gh as [
-      import("@database/interfaces/user.js").DBUser,
-      import("@octokit/rest").Octokit,
-    ];
-
+  run: async (res, [db, octo], sub, options) => {
     switch (sub?.[0]) {
       case "list": {
         const visibility =
@@ -112,7 +108,7 @@ export default {
 
         const repos = await octo.repos
           .listForAuthenticatedUser({ visibility, per_page: 100, sort: "updated" })
-          .catch((e) => {
+          .catch((e: OctoErrorType) => {
             octoErrResponse(res, e);
             return null;
           });
@@ -171,7 +167,7 @@ export default {
         const owner = options?.get("owner") as string;
         const repo = options?.get("repo") as string;
 
-        const req = await octo.repos.get({ owner, repo }).catch((e) => {
+        const req = await octo.repos.get({ owner, repo }).catch((e: OctoErrorType) => {
           octoErrResponse(res, e);
           return null;
         });
@@ -214,7 +210,11 @@ export default {
         };
 
         if (r.license) {
-          embed.fields!.push({ name: "License", value: r.license.spdx_id, inline: true });
+          embed.fields!.push({
+            name: "License",
+            value: r.license.spdx_id ?? "Unlicensed",
+            inline: true,
+          });
         }
 
         return res.json({

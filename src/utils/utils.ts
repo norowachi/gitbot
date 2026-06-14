@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import {
-  APIInteraction,
+  type APIInteraction,
   InteractionResponseType,
   InteractionType,
-  RESTPatchAPIInteractionOriginalResponseJSONBody,
+  type RESTPatchAPIInteractionOriginalResponseJSONBody,
   Routes,
 } from "discord-api-types/v10";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
@@ -11,6 +11,7 @@ import { config } from "dotenv";
 import type { CommandData } from "@utils";
 import DiscordRestClient from "./rest.js";
 import { CustomIntEmitter } from "./interfaces/main.js";
+import crypto from "node:crypto";
 
 config();
 
@@ -34,8 +35,6 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL ?? "redis://localhost:6379",
   DISCORD_API_URL: process.env.DISCORD_API_URL ?? "https://discord.com/api/v10",
   DISCORD_APP_TOKEN: process.env.DISCORD_APP_TOKEN!,
-  /** Ed25519 public key from the Discord Developer Portal → General Information */
-  DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY!,
   GITHUB_CLIENT_NAME: process.env.GITHUB_CLIENT_NAME,
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
@@ -54,7 +53,6 @@ const required: (keyof typeof env)[] = [
   "MONGO_URI",
   "REDIS_URL",
   "DISCORD_APP_TOKEN",
-  "DISCORD_PUBLIC_KEY",
   "ENCRYPTION_KEY",
 ];
 for (const key of required) {
@@ -63,14 +61,11 @@ for (const key of required) {
 if (env.ENCRYPTION_KEY.length !== 32) {
   throw new Error("ENCRYPTION_KEY must be exactly 32 characters.");
 }
-if (!/^[0-9a-f]{64}$/i.test(env.DISCORD_PUBLIC_KEY)) {
-  throw new Error("DISCORD_PUBLIC_KEY must be a 64-character hex string.");
-}
 
 // ─── Singletons ───────────────────────────────────────────────────────────────
 
 export const rest = new DiscordRestClient(env.DISCORD_APP_TOKEN);
-export const commandsData: Map<string, CommandData> = new Map();
+export const commandsData = new Map<string, CommandData<boolean>>();
 /** In-process emitter used for short-lived modal/confirmation chains (link flow). */
 export const IntEmitter = new CustomIntEmitter();
 /** Pending OAuth state tokens: sha256 random → Discord user ID */
@@ -100,9 +95,7 @@ export function decryptToken(encryptedToken: string): string {
 function getSubtleCrypto(): SubtleCrypto {
   if (typeof globalThis !== "undefined" && globalThis.crypto) return globalThis.crypto.subtle;
   // Node 18 polyfill fallback
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { webcrypto } = require("node:crypto");
-  return webcrypto.subtle;
+  return crypto.webcrypto.subtle as unknown as SubtleCrypto;
 }
 
 const subtle = getSubtleCrypto();
@@ -147,12 +140,14 @@ export function verifyKeyMiddleware(
         res.status(401).end("Invalid signature");
         return;
       }
-      const body = JSON.parse(rawBody.toString("utf-8")) || {};
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const body = JSON.parse(rawBody.toString("utf-8")) ?? {};
       if (body.type === InteractionType.Ping) {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ type: InteractionResponseType.Pong }));
         return;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       req.body = body;
       next();
     };

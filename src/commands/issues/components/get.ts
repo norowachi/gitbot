@@ -1,13 +1,14 @@
-import { Response } from "express";
-import { Octokit } from "@octokit/rest";
+import { type Response } from "express";
+import { type Octokit } from "@octokit/rest";
 import {
   InteractionResponseType,
   MessageFlags,
   ComponentType,
   ButtonStyle,
 } from "discord-api-types/v10";
-import { octoErrResponse, CreateIssueEmbed, DiscordTimestamp } from "@utils";
+import { octoErrResponse, CreateIssueEmbed, DiscordTimestamp, type OctoErrorType } from "@utils";
 import type { DBUser } from "@database/interfaces/user.js";
+import { type Endpoints } from "@octokit/types";
 
 export default async function Get(
   res: Response,
@@ -18,7 +19,7 @@ export default async function Get(
   const repo = options.get("repo") as string;
   const issue_number = options.get("issue_number") as number;
 
-  const req = await octo.issues.get({ owner, repo, issue_number }).catch((e) => {
+  const req = await octo.issues.get({ owner, repo, issue_number }).catch((e: OctoErrorType) => {
     octoErrResponse(res, e);
     return null;
   });
@@ -32,7 +33,7 @@ export default async function Get(
     type: InteractionResponseType.ChannelMessageWithSource,
     data: {
       content: `[\`${data.user?.login}\`](<${data.user?.html_url}>) opened [**${data.title}**](<${data.html_url}>) #${data.number} ${DiscordTimestamp(data.created_at, "R")} · ${data.comments} comment(s)`,
-      embeds: isSimple ? undefined : [CreateIssueEmbed(data)],
+      embeds: isSimple ? undefined : [CreateIssueEmbed(data as Endpoints["GET /repos/{owner}/{repo}/issues/{issue_number}"]["response"]["data"])],
       components: isSimple
         ? undefined
         : [

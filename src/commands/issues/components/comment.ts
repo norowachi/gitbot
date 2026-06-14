@@ -1,5 +1,5 @@
-import { Response } from "express";
-import { Octokit } from "@octokit/rest";
+import { type Response } from "express";
+import { type Octokit } from "@octokit/rest";
 import {
   InteractionResponseType,
   MessageFlags,

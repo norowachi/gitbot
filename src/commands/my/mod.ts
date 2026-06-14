@@ -5,7 +5,7 @@ import {
   MessageFlags,
 } from "discord-api-types/v10";
 import {
-  CommandData,
+  type CommandData,
   octoErrResponse,
   DiscordTimestamp,
   handleUserAutocomplete,
@@ -14,6 +14,7 @@ import {
   truncate,
   safeFieldValue,
   LIMITS,
+  type OctoErrorType,
 } from "@utils";
 import type { APIEmbed } from "discord-api-types/v10";
 
@@ -57,14 +58,10 @@ export default {
         },
       });
     }
+    return;
   },
 
-  run: async (res, gh, sub, options) => {
-    const [db, octo] = gh as [
-      import("@database/interfaces/user.js").DBUser,
-      import("@octokit/rest").Octokit,
-    ];
-
+  run: async (res, [db, octo], sub, options) => {
     switch (sub?.[0]) {
       case "profile": {
         const usernameOpt = options?.get("user") as string | undefined;
@@ -73,61 +70,61 @@ export default {
           usernameOpt
             ? octo.users.getByUsername({ username: usernameOpt })
             : octo.users.getAuthenticated()
-        ).catch((e) => {
+        ).catch((e: OctoErrorType) => {
           octoErrResponse(res, e);
           return null;
         });
 
         if (!req) return;
 
-        const u = req.data;
+        const user = req.data;
 
-        const bio: string | undefined = (u as any).bio ?? undefined;
+        const bio: string | undefined = user.bio ?? undefined;
 
         const embed: APIEmbed = {
-          title: truncate(u.name ?? u.login, LIMITS.EMBED_TITLE),
-          url: u.html_url,
+          title: truncate(user.name ?? user.login, LIMITS.EMBED_TITLE),
+          url: user.html_url,
           description: bio ? truncate(bio, LIMITS.EMBED_DESCRIPTION) : undefined,
-          thumbnail: { url: u.avatar_url },
+          thumbnail: { url: user.avatar_url },
           color: 0x2da44e,
           fields: [
             {
               name: "Login",
-              value: safeFieldValue(`[\`${u.login}\`](${u.html_url})`),
+              value: safeFieldValue(`[\`${user.login}\`](${user.html_url})`),
               inline: true,
             },
-            { name: "Type", value: u.type, inline: true },
-            { name: "Public Repos", value: String(u.public_repos), inline: true },
-            { name: "Followers", value: String(u.followers), inline: true },
-            { name: "Following", value: String(u.following), inline: true },
+            { name: "Type", value: user.type, inline: true },
+            { name: "Public Repos", value: String(user.public_repos), inline: true },
+            { name: "Followers", value: String(user.followers), inline: true },
+            { name: "Following", value: String(user.following), inline: true },
           ],
         };
 
-        if ((u as any).company) {
+        if (user.company) {
           embed.fields!.push({
             name: "Company",
-            value: truncate((u as any).company as string, 100),
+            value: truncate(user.company as string, 100),
             inline: true,
           });
         }
-        if ((u as any).location) {
+        if (user.location) {
           embed.fields!.push({
             name: "Location",
-            value: truncate((u as any).location as string, 100),
+            value: truncate(user.location as string, 100),
             inline: true,
           });
         }
-        if ((u as any).blog) {
+        if (user.blog) {
           embed.fields!.push({
             name: "Website",
-            value: truncate((u as any).blog as string, 200),
+            value: truncate(user.blog as string, 200),
             inline: true,
           });
         }
-        if (u.created_at) {
+        if (user.created_at) {
           embed.fields!.push({
             name: "Joined GitHub",
-            value: DiscordTimestamp(u.created_at, "f"),
+            value: DiscordTimestamp(user.created_at, "f"),
             inline: true,
           });
         }
@@ -144,7 +141,7 @@ export default {
       case "notifications": {
         const req = await octo.activity
           .listNotificationsForAuthenticatedUser({ all: false, per_page: 50 })
-          .catch((e) => {
+          .catch((e: OctoErrorType) => {
             octoErrResponse(res, e);
             return null;
           });
