@@ -1,0 +1,33 @@
+# Node.js dependencies
+node_modules/
+.pnp/
+.pnpm-store/
+*.tgz
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+coverage/
+.nyc_output/
+
+# pnpm
+.pnpmfile.cjs
+
+# Editor directories and files
+.vscode/
+.idea/
+
+# Optional npm cache folder
+.npm/
