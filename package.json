@@ -9,13 +9,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && node build.mjs",
-    "build:watch": "node build.mjs --watch",
+    "build": "tsc && tsc-alias",
+    "build:watch": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
     "rebuild": "rm -rf dist && pnpm build",
-    "register": "node dist/register.js",
+    "register": "pnpm build && node dist/register.js",
     "start": "node dist/index.js",
-    "dev": "pnpm build && pnpm start",
-    "dev:watch": "pnpm build:watch",
+    "dev": "tsx src/index.ts",
+    "dev:watch": "tsx watch src/index.ts",
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -32,11 +32,10 @@
     "github",
     "bot"
   ],
-  "author": "Andrew <contact@norowa.dev>",
+  "author": "Andrew <contact@noro.cc>",
   "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^22.0.1",
-    "@octokit/types": "^13.6.1",
     "axios": "^1.7.9",
     "discord-api-types": "^0.38.48",
     "dotenv": "^16.4.7",
@@ -46,17 +45,20 @@
     "mongoose": "^8.9.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
-    "redis": "^4.7.0",
-    "typescript": "^5.7.3"
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
+    "@octokit/types": "^13.10.0",
     "@types/express": "^5.0.0",
     "@vitest/coverage-v8": "^3.0.2",
-    "esbuild": "^0.24.2",
+    "concurrently": "^10.0.3",
     "eslint": "^9.18.0",
     "globals": "^15.14.0",
     "prettier": "^3.8.4",
+    "tsc-alias": "^1.8.17",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.20.0",
     "vitest": "^3.0.2"
   }

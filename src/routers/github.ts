@@ -25,8 +25,18 @@ router.get("/verify/:state", oauthLimiter, async (req, res) => {
     res.status(503).send("GitHub OAuth is not configured on this instance.");
     return;
   }
-
   const state = req.params.state as string;
+
+  if (!state || !ghLinks.has(state))
+    return res.status(400).send("Invalid or expired state token. Please run `/link` again.");
+
+  return res.redirect(
+    `https://github.com/apps/${env.GITHUB_CLIENT_NAME}/installations/new?state=${state}`
+  );
+});
+
+router.get("/callback", async (req, res) => {
+  const state = req.query.state as string;
   const code = req.query.code;
 
   const discordId = ghLinks.get(state);
@@ -48,9 +58,9 @@ router.get("/verify/:state", oauthLimiter, async (req, res) => {
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
         code,
-        redirect_uri: `${env.SITE_URL}/github/verify/${state}`,
+        redirect_uri: `${env.SITE_URL}/github/callback`,
       },
-      { headers: { Accept: "application/json" } }
+      { headers: { Accept: "application/vnd.github+json" } }
     )
     .catch(() => null);
 
@@ -68,7 +78,9 @@ router.get("/verify/:state", oauthLimiter, async (req, res) => {
       id: number;
       login: string;
       type: string;
-    }>("https://api.github.com/user", { headers: { Authorization: `Bearer ${accessToken}`, "User-Agent": "gitbot/2.0" } })
+    }>("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${accessToken}`, "User-Agent": "gitbot/2.0" },
+    })
     .catch(() => null);
 
   if (!userRes?.data) {

@@ -76,6 +76,7 @@ export class Kernel extends EventEmitter {
     super();
     this.setMaxListeners(0);
     this.app = express();
+    this.app.set('trust proxy', 1);
     this.app.use(express.raw({ type: "application/json" }));
   }
 
@@ -164,8 +165,10 @@ export class Kernel extends EventEmitter {
       })
       .catch(() => log.error("Failed to load GitHub OAuth router"));
 
+      log.debug("Mounting interaction route with public key verification middleware: " + this.PubKey);
     // Discord interactions
-    this.app.post("/", verifyKeyMiddleware(this.PubKey!), (req, res) => {
+    this.app.post("/interactions", verifyKeyMiddleware(this.PubKey!), (req, res) => {
+      log.debug("Interaction received:", req.body);
       void this._handleInteraction(req.body as APIInteraction, res);
     });
   }
@@ -476,6 +479,7 @@ export class Kernel extends EventEmitter {
     interaction: APIInteraction,
     res: express.Response
   ): Promise<void> {
+    log.debug({ type: interaction.type }, "Handling interaction");
     // ── Components & Modals ───────────────────────────────────────────────────
     if (
       interaction.type === InteractionType.MessageComponent ||
