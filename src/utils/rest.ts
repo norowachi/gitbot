@@ -27,7 +27,7 @@ export default class DiscordRestClient {
     if (retryAfterMs) await new Promise((r) => setTimeout(r, retryAfterMs * 1.01));
 
     const headers: RawAxiosRequestHeaders = {
-      "User-Agent": "gitbot/2.0 (norowa.dev)",
+      "User-Agent": "gitbot/2.0",
       Authorization: `Bot ${this.token}`,
       "Content-Type": "application/json",
       ...options?.headers,
