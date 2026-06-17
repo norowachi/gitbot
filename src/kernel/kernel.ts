@@ -272,20 +272,44 @@ export class Kernel extends EventEmitter {
   // ── Built-in commands ─────────────────────────────────────────────────────────
 
   private async _loadBuiltins(): Promise<void> {
-    const imports = await Promise.all([
-      import("../commands/link/mod.js"),
-      import("../commands/unlink/mod.js"),
-      import("../commands/issues/mod.js"),
-      import("../commands/pulls/mod.js"),
-      import("../commands/repos/mod.js"),
-      import("../commands/my/mod.js"),
-      import("../commands/settings/mod.js"),
-    ]);
+    // Dynamically discover command folders and import their mod files
+    const cmdsDir = path.resolve(__dirname, "../commands");
+    const imports: Array<any> = [];
+    
+    try {
+      const dirents = await import("node:fs/promises").then(({ readdir }) => readdir(cmdsDir, { withFileTypes: true }));
+      for (const d of dirents) {
+        if (!d.isDirectory()) continue;
+
+        const modJs = path.join(cmdsDir, d.name, "mod.js");
+        const modTs = path.join(cmdsDir, d.name, "mod.ts");
+        let toImport: string | null = null;
+
+        if (existsSync(modJs)) toImport = `file://${modJs}`;
+        else if (existsSync(modTs)) toImport = `file://${modTs}`;
+
+        if (!toImport) continue;
+
+        try {
+          const imp = await import(toImport);
+          imports.push(imp);
+        } catch (err) {
+          log.error({ err, file: toImport }, "Failed to import built-in command");
+        }
+      }
+    } catch (err) {
+      log.error({ err }, "Failed to read built-in commands directory");
+    }
 
     // Load factories
-    await import("../factories/index.js");
+    try {
+      await import("../factories/index.js");
+    } catch (err) {
+      log.error({ err }, "Failed to load factories");
+    }
 
     for (const { default: cmd } of imports) {
+      if (!cmd || !cmd.name) continue;
       commandsData.set(cmd.name, cmd);
       this.builtinCommands.push(cmd.name);
     }

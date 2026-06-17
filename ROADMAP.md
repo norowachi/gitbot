@@ -4,24 +4,7 @@
 
 ## What was rewritten and why
 
-### 1. Database: LevelDB → MongoDB (Mongoose)
-
-**Before:** User data was stored in LevelDB, a key-value store with no schema, no querying,
-and no migrations. The only way to look up a user was to know their exact key.
-
-**After:** Mongoose with a typed `UserSchema`. Benefits:
-- Indexed lookups by both `discord.id` and `github.id`
-- Per-repo `IssueRepoSettings` stored as an embedded sub-document array
-- Easy `$or` queries, partial updates via `doc.save()`
-- Schema validates data on write — bad data never reaches the DB
-
-LevelDB is still used for the **read-through cache** (repo lists, issue/PR numbers, labels)
-because it excels at fast in-process key lookups. TTL-based invalidation (15 min) was added
-so stale autocomplete data refreshes automatically.
-
----
-
-### 2. Token security: plain text → AES-256-CBC
+### 1. Token security: plain text → AES-256-CBC
 
 **Before:** GitHub Personal Access Tokens were stored in the database as plain text.
 A DB dump would expose every user's token.
@@ -32,7 +15,7 @@ only at request time, in memory. The key never touches the database.
 
 ---
 
-### 3. Signature verification: imported library → native Web Crypto
+### 2. Signature verification: imported library → native Web Crypto
 
 **Before:** The original used `discord-interactions` npm package.
 
@@ -41,7 +24,7 @@ only at request time, in memory. The key never touches the database.
 
 ---
 
-### 4. Issues command: 3 subcommands → 7 subcommands
+### 3. Issues command: 3 subcommands → 7 subcommands
 
 | Subcommand | v1 | v2 |
 |---|---|---|
@@ -55,7 +38,7 @@ only at request time, in memory. The key never touches the database.
 
 ---
 
-### 5. Pulls command: 3 subcommands → 8 subcommands
+### 4. Pulls command: 3 subcommands → 8 subcommands
 
 | Subcommand | v1 | v2 |
 |---|---|---|
@@ -71,7 +54,7 @@ only at request time, in memory. The key never touches the database.
 
 ---
 
-### 6. Autocomplete: per-field coverage
+### 5. Autocomplete: per-field coverage
 
 | Field | v1 | v2 |
 |---|---|---|
@@ -85,7 +68,7 @@ only at request time, in memory. The key never touches the database.
 
 ---
 
-### 7. Embed builders extracted and shared
+### 6. Embed builders extracted and shared
 
 Before, each command built its own embed ad-hoc with no consistency.
 Now `CreateIssueEmbed()` and `CreatePREmbed()` are shared functions in
@@ -93,7 +76,7 @@ Now `CreateIssueEmbed()` and `CreatePREmbed()` are shared functions in
 
 ---
 
-### 8. Pagination
+### 7. Pagination
 
 `embedMaker()` implements paginated embeds using `prev/next` buttons with:
 - Per-user authorship guard (only the invoker can page through)
@@ -102,17 +85,7 @@ Now `CreateIssueEmbed()` and `CreatePREmbed()` are shared functions in
 
 ---
 
-### 9. Link flow: polish + PAT modal
-
-The `link` command now uses a **Discord Modal** (`TextInput`) for PAT entry so the token
-is never visible in the chat. A confirmation embed (showing GitHub login + avatar)
-is shown before the account is actually saved. The OAuth "Sign in with GitHub" button
-is only shown when `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` are configured, so
-PAT-only deployments have a clean UI.
-
----
-
-### 10. Merge with confirmation
+### 8. Merge with confirmation
 
 `/pulls merge` shows the PR title and chosen merge strategy, then waits for a
 ✅ Merge / ❌ Cancel button click before touching GitHub. Unmergeable or already-merged
@@ -120,7 +93,7 @@ PRs are rejected early with a clear error message.
 
 ---
 
-### 11. Settings command expanded
+### 9. Settings command expanded
 
 | Setting | v1 | v2 |
 |---|---|---|
@@ -132,7 +105,7 @@ PRs are rejected early with a clear error message.
 
 ---
 
-### 12. New `/my` subcommands
+### 10. New `/my` subcommands
 
 | Subcommand | v1 | v2 |
 |---|---|---|
@@ -141,7 +114,7 @@ PRs are rejected early with a clear error message.
 
 ---
 
-### 13. New `/repos` command
+### 11. New `/repos` command
 
 | Subcommand | v1 | v2 |
 |---|---|---|
@@ -150,22 +123,7 @@ PRs are rejected early with a clear error message.
 
 ---
 
-### 14. `unlink` command: confirmation dialog
-
-Before, `/unlink` deleted the account immediately with no prompt.
-Now it shows a Danger/Cancel confirmation button pair to prevent accidental data loss.
-
----
-
-### 15. CustomIntEmitter: auto-cleanup + fallback
-
-`CustomIntEmitter` now:
-- Schedules listener removal after 30 minutes to prevent memory leaks
-- Sends a fallback "unexpected error" response when no listener handles an event
-
----
-
-### 16. Docker: multi-stage + healthcheck
+### 12. Docker: multi-stage + healthcheck
 
 The Dockerfile uses a 3-stage build (`deps` → `builder` → `runner`) to keep the final
 image small. `docker-compose.yml` adds a MongoDB healthcheck so the app container waits
@@ -174,18 +132,6 @@ for the DB before starting.
 ---
 
 ## Roadmap — Recommended next steps
-
-### P0 — Security / correctness (do these first)
-
-- [x] **Store the Discord public key** in `.env` as `DISCORD_PUBLIC_KEY` and use it in
-  `verifyKeyMiddleware`. The current placeholder breaks signature verification in production.
-- [x] **Rate-limit the `/github/verify` route** (e.g. `express-rate-limit`) to prevent
-  token-exchange abuse.
-- [x] **Add a `DISCORD_PUBLIC_KEY` env validation** alongside the existing startup checks.
-- [x] **Rotate token on re-link** — if a user `/unlinks` and re-links with a new token,
-  the old encrypted token should be overwritten, not rejected as a duplicate.
-
----
 
 ### P1 — Features users will notice
 
@@ -202,35 +148,17 @@ for the DB before starting.
 
 ---
 
-### P2 — Developer experience
-
-- [x] **Replace `tsc-alias` with `tsc` + `esbuild` bundle** for faster local iteration and
-  a single-file output (no `.js` import path rewriting needed).
-- [x] **Add Vitest unit tests** for:
-  - `encryptToken` / `decryptToken` round-trip
-  - `getOptionsValue` option parsing
-  - `handleLabelAutocomplete` multi-label logic
-  - `OctoErrMsg` error formatter
-- [x] **GitHub Actions CI** — lint (ESLint), type-check (`tsc --noEmit`), test on PRs.
-- [x] **Structured logging** (e.g. `pino`) instead of `console.log`. Enables log shipping
-  to Datadog / Logtail without code changes.
-
----
-
-### P3 — Scalability
+### P2 — Scalability
 
 - [ ] **Queue-backed cache refresh** — instead of fire-and-forget `upsertLevelUser()` on
   every command invocation, use a BullMQ queue with a Redis backend. Stale cache triggers
   a background job; the request uses whatever is cached.
-- [ ] **Shard support** — the current single-process Express server works up to ~2,500
-  guilds. Beyond that, split into a dedicated HTTP gateway + worker processes communicating
-  over Redis pub/sub.
 - [ ] **MongoDB read replica** — point `getUser()` lookups at a secondary replica to reduce
   primary load when user count grows.
 
 ---
 
-### P4 — Quality of life
+### P3 — Quality of life
 
 - [ ] **`/help` command** — lists all commands with short descriptions and links to the
   documentation site.
