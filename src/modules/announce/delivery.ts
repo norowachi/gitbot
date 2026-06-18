@@ -8,7 +8,7 @@ export function buildAnnouncementEmbed(ann: IAnnouncement): APIEmbed {
   return {
     title: truncate(ann.title, LIMITS.EMBED_TITLE),
     url: ann.url,
-    description: truncate(ann.body, LIMITS.EMBED_DESCRIPTION),
+    description: truncate(ann.body, LIMITS.EMBED_DESCRIPTION).replace(/\n/g, "\n"),
     color: ann.color,
     footer: {
       text: `Gitbot Announcement · ${ann.slug}`,
