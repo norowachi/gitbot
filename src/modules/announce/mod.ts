@@ -33,8 +33,9 @@ import type { Module, KernelHandle } from "../../kernel/types.js";
 import { AnnouncementModel } from "./schema.js";
 import { buildAnnouncementEmbed, deliverViaDM, getPendingAnnouncements } from "./delivery.js";
 import { registerAnnouncementMiddleware } from "./middleware.js";
-import { env, log, truncate, safeFieldValue, LIMITS } from "@utils";
+import { env, log, truncate, safeFieldValue, LIMITS, IntEmitter } from "@utils";
 import UserModel from "../../database/schemas/user.js";
+import { Response } from "express";
 
 // ─── Admin guard ──────────────────────────────────────────────────────────────
 
@@ -440,6 +441,58 @@ export default {
             const rawBody = options?.get("body") as string | undefined;
             const colorStr = options?.get("color") as string | undefined;
             const url = options?.get("url") as string | undefined;
+
+            if (
+              rawBody === undefined &&
+              title === undefined &&
+              colorStr === undefined &&
+              url === undefined
+            ) {
+              const modalId = `announce-edit-body:${slug}`;
+              res.json({
+                type: InteractionResponseType.Modal,
+                data: {
+                  custom_id: modalId,
+                  title: "Edit announcement body",
+                  components: [
+                    {
+                      type: 1,
+                      components: [
+                        {
+                          type: 4,
+                          custom_id: "body",
+                          style: 2,
+                          label: "Body",
+                          placeholder: "Enter the announcement body...",
+                          required: true,
+                          min_length: 1,
+                          max_length: LIMITS.EMBED_DESCRIPTION,
+                          value: ann.body ?? "",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              });
+              IntEmitter.once(modalId, async (modalRes: Response, int: any) => {
+                const body: string = int.data.components[0].components[0].value;
+
+                if (body) ann.body = body;
+
+                await ann.save();
+
+                modalRes.json({
+                  type: InteractionResponseType.ChannelMessageWithSource,
+                  data: {
+                    content: `✅ Draft \`${slug}\` updated.`,
+                    embeds: [buildAnnouncementEmbed(ann)],
+                    flags: MessageFlags.Ephemeral,
+                  },
+                });
+                return;
+              });
+              return;
+            }
 
             const body =
               rawBody !== undefined ? truncate(rawBody, LIMITS.EMBED_DESCRIPTION) : undefined;
