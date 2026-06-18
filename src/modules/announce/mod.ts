@@ -25,8 +25,10 @@
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
+  ComponentType,
   InteractionResponseType,
   MessageFlags,
+  TextInputStyle,
 } from "discord-api-types/v10";
 import type { APIEmbed } from "discord-api-types/v10";
 import type { Module, KernelHandle } from "../../kernel/types.js";
@@ -442,13 +444,8 @@ export default {
             const colorStr = options?.get("color") as string | undefined;
             const url = options?.get("url") as string | undefined;
 
-            if (
-              rawBody === undefined &&
-              title === undefined &&
-              colorStr === undefined &&
-              url === undefined
-            ) {
-              const modalId = `announce-edit-body:${slug}`;
+            if (!(rawBody && title && colorStr && url)) {
+              const modalId = `announce-edit:${slug}`;
               res.json({
                 type: InteractionResponseType.Modal,
                 data: {
@@ -456,16 +453,15 @@ export default {
                   title: "Edit announcement body",
                   components: [
                     {
-                      type: 1,
+                      type: ComponentType.TextDisplay,
                       components: [
                         {
-                          type: 4,
+                          type: ComponentType.TextInput,
                           custom_id: "body",
-                          style: 2,
+                          style: TextInputStyle.Paragraph,
                           label: "Body",
                           placeholder: "Enter the announcement body...",
                           required: true,
-                          min_length: 1,
                           max_length: LIMITS.EMBED_DESCRIPTION,
                           value: ann.body ?? "",
                         },
