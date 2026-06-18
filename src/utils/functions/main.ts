@@ -165,6 +165,8 @@ export const LIMITS = {
   EMBEDS_PER_MESSAGE: 10,
   /** Max fields per embed */
   FIELDS_PER_EMBED: 25,
+    /** Discord Modal TextInput */
+  MODAL_TEXT_INPUT: 4000,
 } as const;
 
 /**

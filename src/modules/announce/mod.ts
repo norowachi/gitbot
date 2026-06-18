@@ -449,11 +449,11 @@ export default {
               res.json({
                 type: InteractionResponseType.Modal,
                 data: {
-                  custom_id: modalId,
                   title: "Edit announcement body",
+                  custom_id: modalId,
                   components: [
                     {
-                      type: ComponentType.TextDisplay,
+                      type: ComponentType.ActionRow,
                       components: [
                         {
                           type: ComponentType.TextInput,
@@ -462,7 +462,7 @@ export default {
                           label: "Body",
                           placeholder: "Enter the announcement body...",
                           required: true,
-                          max_length: LIMITS.EMBED_DESCRIPTION,
+                          max_length: LIMITS.MODAL_TEXT_INPUT,
                           value: ann.body ?? "",
                         },
                       ],

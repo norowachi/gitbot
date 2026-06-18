@@ -48,7 +48,7 @@ export async function loadModuleFile(filePath: string): Promise<Module> {
 }
 
 /**
- * Scan a directory for module entry files (`mod.js`).
+ * Scan a directory for module entry files (`mod.js` or `mod.ts`).
  * Returns absolute paths to each found entry.
  */
 export async function discoverModules(dir: string): Promise<string[]> {
@@ -66,9 +66,12 @@ export async function discoverModules(dir: string): Promise<string[]> {
 
     if (s.isDirectory()) {
       // Module directory: look for mod.js entry
-      const candidate = `${full}/mod.js`;
-      if (existsSync(candidate)) paths.push(candidate);
-    } else if (entry.endsWith(".js") && !entry.endsWith(".test.js")) {
+      const candidateJS = `${full}/mod.js`;
+      const candidateTS = `${full}/mod.ts`;
+
+      if (existsSync(candidateJS)) paths.push(candidateJS);
+      else if (existsSync(candidateTS)) paths.push(candidateTS);
+    } else if (/\.(js|ts)$/.test(entry) && !/\.test\.(js|ts)$/.test(entry)) {
       paths.push(full);
     }
   }
